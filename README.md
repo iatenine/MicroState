@@ -14,9 +14,13 @@ To select an element with id `bar` and instantiate the state as `{ready: false}`
 ## Components
 Components should be functions with the following signature: 
 
-```(state: object) => string```
+`(newState: object, prevState: object) => string`
 
 The MicroState object only accepts a root-level component with components responsible for structuring child components
 
 ## Adding event listeners
-Adding event listeners directly to the components isn't recommended, instead ensure each component includes an id you can query (avoid spaces, punctuations, etc) based on state and add a callback to dynamically attach them in the `setOnAfterRender()` method
+Adding event listeners directly to the components isn't recommended, instead ensure each component includes an id you can query (avoid spaces, punctuations, etc) based on state and add a callback to dynamically attach them in the `setOnAfterRender()` method. onAfterRender and onBeforeRender callbacks should have the following signature:
+
+`(newState: object, prevState: object) => any`
+
+onBeforeRender callbacks are provided for convenience but should not be used to add event listeners to MicroState components
