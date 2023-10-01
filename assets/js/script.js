@@ -1,12 +1,12 @@
 // create MicroState (renders automatically)
-const stateHandler = new MicroState(listContainer, {
+const stateHandler = new MicroState(ListContainer, {
   list: [],
 });
 
 // use separate MicroStates for inputs and displays
 // to prevent rerenders causing user to lose focus
 const inputHandler = new MicroState(
-  input,
+  Input,
   {
     style: "width: 18rem", // never changes, never rerenders
   },
@@ -31,7 +31,9 @@ stateHandler.setOnAfterRender(() => {
   // Dynamic event listener example
   const list = stateHandler.getState("list");
   list.forEach((elem) => {
-    const removeButton = document.querySelector(`#remove-${elem}`);
+    const removeButton = document.querySelector(
+      `#${elem.replace(/[^\w]/g, "_")}`
+    );
     removeButton.onclick = () => {
       const filteredList = list.filter((e) => e !== elem);
       stateHandler.putState({ list: filteredList });

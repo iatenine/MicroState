@@ -1,21 +1,24 @@
 //components
-const button = (state) => {
-  return `<div id=${state.el}>${state.el} <button id='remove-${state.el}'>X</button></div>`;
+const Button = (state) => {
+  const id = state.el.replace(/[^\w]/g, "_");
+  return `<div id=${id}>${state.el} <button id='remove-${state.el}'>X</button></div>`;
 };
 
-const listItem = (state) => {
+const ListItem = (state) => {
   return `${
     state.list.length === 0
       ? `No items`
-      : state.list.map((el) => `${button({ el })}`).join("") // you can be selective on what state to be passed to children
+      : state.list.map((el) => `<Button el={${el}} />`).join("") // you can be selective on what state to be passed to children
   }`;
 };
 
-const listContainer = (state) => `
+const componentRegex = /(?<=<)[A-Z]\w*(?=\s?\/>)/g;
+
+const ListContainer = (state) => `
 <div>
-    ${listItem(state)}
+  <ListItem />
 </div>
 `;
 
-const input = (state) =>
+const Input = (state) =>
   `<input id='input' style="${state.style}" placeholder='Enter a new value and press enter' />`;
