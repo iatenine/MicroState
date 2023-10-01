@@ -76,15 +76,14 @@ class MicroState {
    */
   _render(prevState) {
     if (!this.root || !this.mountPoint) return;
-    const newState = this.state;
-    this.onBeforeRender(newState, prevState);
-    const rootString = this.root(newState, prevState);
+    this.onBeforeRender(this.state, prevState);
+    const rootString = this.root({ state: this.state, prevState, props: {} });
     this.mountPoint.innerHTML = this._evaluateString(
       rootString,
-      newState,
+      this.state,
       prevState
     );
-    this.onAfterRender(newState, prevState);
+    this.onAfterRender(this.state, prevState);
   }
 
   /**
@@ -101,12 +100,15 @@ class MicroState {
     // otherwise, get the first match and evaluate it
     const match = string.match(regex)[0];
     const componentName = match.match(/\w+/g)[0];
-    const childState = match.match(/\w+={[^}]*}+/)
-      ? this.buildObjectFromAttributes(match)
-      : state;
-    const executionString = `${componentName}(${JSON.stringify(
-      childState
-    )}, ${JSON.stringify(prevState)})`;
+    const props = match.match(/\w+={[^}]*}+/)
+      ? this._buildObjectFromAttributes(match)
+      : {};
+    const executionString = `${componentName}({
+      state: ${JSON.stringify(state)}, 
+      prevState: ${JSON.stringify(prevState)},
+        props: ${JSON.stringify(props)}
+      })`;
+    console.log(executionString);
     const replacementString = eval(executionString);
     return this._evaluateString(
       string.replace(regex, replacementString),
@@ -115,7 +117,12 @@ class MicroState {
     );
   }
 
-  buildObjectFromAttributes(string) {
+  /**
+   * private function, do not invoke directly
+   * @param {string} string
+   * @returns
+   */
+  _buildObjectFromAttributes(string) {
     // expect component to have the following form <ComponentName key1=value1 key2=value2 />
     const regex2 = /\w+={[^}]*}/g;
     // const regex = /(?<={)\w+.*?(?=})/g;
@@ -129,6 +136,12 @@ class MicroState {
     return result;
   }
 
+  /**
+   * Accepts state object and recursively escapes all values
+   * with type of string of HTML characters.
+   * @param {string} state
+   * @returns {object}
+   */
   static escapeHTML(state) {
     // recursively escapeHTML of all strings in state
     const keys = Object.keys(state);
@@ -144,6 +157,11 @@ class MicroState {
     return state;
   }
 
+  /**
+   * Accepts a string and escapes all HTML characters
+   * @param {string} unsafe
+   * @returns {string}
+   */
   static sanitizeHTML(unsafe) {
     return unsafe
       .replace(/&(?!(amp;|lt;|gt;|#39;|quot;))/g, "&amp;")
