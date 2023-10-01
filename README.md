@@ -4,7 +4,7 @@ An injectable, lightweight, DOM-friendly state manager enabling the use of reusa
 
 ## Implementation
 
-This repo and its page serve to provide an example of MicroState implementation but a copy of `assets/js/MicroState.js` is the only file required to use it in any project
+This repo and its page serve to provide an example of MicroState implementation but a copy of [MicroState.js](https://github.com/iatenine/MicroState/blob/main/assets/js/MicroState.js) is the only file required to use it in any project
 
 A MicroState with the root component `Foo` can be instantiated easily as:
 
