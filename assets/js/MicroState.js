@@ -124,9 +124,8 @@ class MicroState {
    */
   _buildObjectFromAttributes(string) {
     // expect component to have the following form <ComponentName key1=value1 key2=value2 />
-    const regex2 = /\w+={[^}]*}/g;
-    // const regex = /(?<={)\w+.*?(?=})/g;
-    const attributes = string.match(regex2);
+    const regex = /\w+={[^}]*}/g;
+    const attributes = string.match(regex);
     const result = {};
     if (!attributes) return result;
     attributes.forEach((attr) => {
