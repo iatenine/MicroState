@@ -28,4 +28,4 @@ const ListContainer = () => `
 // If a component returns a string with no components, it will be evaluated as HTML
 // strings in state object should be sanitized before being passed to components
 const Input = ({ state }) =>
-  `<input id='input' style="${state.style}" placeholder='Enter a new value and press enter' />`;
+  `<input id='input' style="width:18rem" placeholder='Enter a new value and press enter' />`;

@@ -7,13 +7,22 @@
  */
 
 class MicroState {
-  componentRegex = /(?<=<)[A-Z]\w*(?=\s?\/>)/g;
-  constructor(root, initialState = {}, mountPointId = "root") {
-    this.state = initialState;
-    this.root = root;
+  /**
+   *
+   * @param {{rootComponent: () => string, state: object, mountPoint: HTMLElement}} Config
+   */
+  constructor({ rootComponent, state = {}, mountPoint = null }) {
+    if (!mountPoint && !document.querySelector("#root"))
+      throw new Error(
+        "DOM must contain element with id of root or mountPoint must be provided"
+      );
+    if (!rootComponent) throw new Error("rootComponent is required");
+    this.setState(state);
+    this.root = rootComponent;
     this.onAfterRender = () => {};
     this.onBeforeRender = () => {};
-    this._mount(mountPointId);
+    this.mountPoint = mountPoint || document.querySelector("#root");
+    this._render();
   }
   /**
    * Return state object if no key is provided or
@@ -108,7 +117,6 @@ class MicroState {
       prevState: ${JSON.stringify(prevState)},
         props: ${JSON.stringify(props)}
       })`;
-    console.log(executionString);
     const replacementString = eval(executionString);
     return this._evaluateString(
       string.replace(regex, replacementString),

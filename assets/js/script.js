@@ -1,17 +1,18 @@
 // create MicroState (renders automatically)
-const stateHandler = new MicroState(ListContainer, {
-  list: [],
+const stateHandler = new MicroState({
+  rootComponent: ListContainer,
+  state: {
+    list: [],
+  },
 });
 
 // use separate MicroStates for inputs and displays
 // to prevent rerenders causing user to lose focus
-const inputHandler = new MicroState(
-  Input,
-  {
-    style: "width: 18rem", // never changes, never rerenders
-  },
-  "input-root"
-);
+new MicroState({
+  rootComponent: Input,
+  mountPoint: document.querySelector("#input-root"),
+  // stateless configuration, should never rerender
+});
 
 //optional: Do something before rerenders trigger
 // stateHandler.setOnBeforeRender((prevState, state) => {
