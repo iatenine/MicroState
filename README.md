@@ -13,14 +13,21 @@ const Foo = () => `
     <div>
         Hello, I'm an example component
     </div>`;
-const microState = new MicroState(Foo);
+const microState = new MicroState({
+   rootComponent: Foo
+  });
 ```
 
 By default, this will be injected in a DOM element with the id of `root` and have an initial empty state object
 To select an element with id `bar` and instantiate the state as `{ready: false}` instead run
 
 ```
-const microState = new MicroState(Foo, { ready: false }, 'bar');
+const selectedMountPoint = document.querySelector("#bar");
+const microState = new MicroState({
+  rootComponent: Foo,
+  state: { ready: false },
+  mountPoint: selectedMoutPoint
+  });
 ```
 
 ## Lifecycle
