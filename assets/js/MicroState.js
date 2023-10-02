@@ -1,15 +1,23 @@
 /**
  * MicroState
- * inject mountpoint with result of root function
- * root function, and its children, should follow
- * the structure of (state: object, prevState: object) => string.
- * Expects mountPointID to be "root" if not specified
+ * A state container to render HTML strings returned by components,
+ * injected into a DOM element provided upon instantiation.
  */
 
 class MicroState {
   /**
-   *
-   * @param {{rootComponent: () => string, state: object, mountPoint: HTMLElement}} Config
+   * inject mountpoint with result of root function
+   * root function, and its children, should follow
+   * the structure of (state: object, prevState: object) => string.
+   * Expects mountPointID to be "root" if not specified
+   * @param {{
+   * rootComponent: (contextObject: {
+   *  state: object,
+   *  prevState: object,
+   *  props: object
+   * }) => string,
+   * state?: object,
+   * mountPoint?: HTMLElement}} Config
    */
   constructor({ rootComponent, state = {}, mountPoint = null }) {
     if (!mountPoint && !document.querySelector("#root"))
