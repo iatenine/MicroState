@@ -74,3 +74,15 @@ Adding event listeners directly to the components isn't recommended, instead ens
 ```
 
 onBeforeRender callbacks are provided for convenience but should not be used to add event listeners to MicroState components
+
+## "Gotchas" for React Developers
+
+Despite the similar syntax there are several key differences in behavior React developers should know:
+
+- JSX-syntax components must be self-closed (Correct: `<Foo />` Incorrect: `<Foo></Foo>`)
+- State is identical for all components in a MicroState instance with the `props` object being a separate key
+- Components do not add event listeners such as `onClick` or `onChange`, see [Adding Event Listeners](#adding-event-listeners) for more
+- Component attributes do not correspond to HTML attributes, they are passed as props; child components are responsible for using them correctly
+- Closing each tag in a component is recommended but not enforced
+- Multiple MicroState objects can exist on the same page
+- MicroState objects rerender all their components with every state change, irrespective of any dependencies
