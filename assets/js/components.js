@@ -9,10 +9,12 @@ const Button = ({ props }) => {
 // ListItem is only concerned with state, not props
 // but it provides props dynamically to Button
 const ListItem = ({ state }) => {
+  // you can be selective on what state to be passed to children
+  // concluding a map returning component strings with .join("") is no longer necessary
   return `${
     state.list.length === 0
       ? `No items`
-      : state.list.map((el) => `<Button el={${el}} />`).join("") // you can be selective on what state to be passed to children
+      : state.list.map((el) => `<Button el={${el}} />`)
   }`;
 };
 

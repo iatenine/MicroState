@@ -126,11 +126,14 @@ class MicroState {
         props: ${JSON.stringify(props)}
       })`;
     const replacementString = eval(executionString);
+    const trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
     return this._evaluateString(
       string.replace(regex, replacementString),
       state,
       prevState
-    );
+    )
+      .match(trimOuter)
+      .join("");
   }
 
   /**

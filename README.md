@@ -84,5 +84,6 @@ Despite the similar syntax there are several key differences in behavior React d
 - Components do not add event listeners such as `onClick` or `onChange`, see [Adding Event Listeners](#adding-event-listeners) for more
 - Component attributes do not correspond to HTML attributes, they are passed as props; child components are responsible for using them correctly
 - Closing each tag in a component is recommended but not enforced
+  - Note: "orphaned" text nodes (not wrapped corresponding HTML tags) are no longer rendered, text nodes will not be considered orphaned if wrapped in a parent component's tags
 - Multiple MicroState objects can exist on the same page
 - MicroState objects rerender all their components with every state change, irrespective of any dependencies
