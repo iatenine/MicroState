@@ -33,7 +33,7 @@ stateHandler.setOnAfterRender(() => {
   const list = stateHandler.getState("list");
   list.forEach((elem) => {
     const removeButton = document.querySelector(
-      `#${elem.replace(/[^\w]/g, "_")}`
+      `#remove-${elem.replace(/[^\w]/g, "_")}`
     );
     removeButton.onclick = () => {
       const filteredList = list.filter((e) => e !== elem);
