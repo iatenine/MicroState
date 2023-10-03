@@ -84,7 +84,7 @@ will render the ListItem component, passing the state, prevState objects as usua
 <Button name={"The Best Button"} value={400} />
 ```
 
-will receive `{name: "The Best Button", value: "400"}` as its props object (state and prevState are not affected). You may provide any value but will be received by the component as a stringified version of itself and the component is responsible for parsing the value if desired.
+will receive `{name: "The Best Button", value: "400"}` destructured into its first parameter (state and prevState are also included). You may provide any value but will be received by the component as a stringified version of itself and the component is responsible for parsing the value if desired.
 
 ## Adding Event Listeners
 
