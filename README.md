@@ -41,10 +41,31 @@ Components should be functions with the following signature:
 ```
 ({state: object,
 prevState: object,
-props: object}) => string
+...props: object}) => string
 ```
 
 Components are free to ignore all parameters not useful to them. The MicroState object only accepts a root-level component with components responsible for structuring child components
+
+## State
+
+MicroState components do not have internal state but can be passed props by their parents. The code attached includes the following example of `ListItem` rendering `Button` components with an `el` prop generated for each:
+
+```
+const Button = ({ el }) => {
+  const id = el.replace(/[^\w]/g, "_"); // protects against generating invalid IDs
+  return `<div id=${id}>${el} <button id='remove-${el}'>X</button></div>`;
+};
+
+const ListItem = ({ state }) => {
+  return `${
+    state.list.length === 0
+      ? `No items`
+      : state.list.map((el) => `<Button el={${el}} />`)
+  }`;
+};
+```
+
+props are destructured and share scope with `state` and `prevState` so naming props as such can result in unexpected behavior. This will likely cause an error in future iterations
 
 ## Automatic Component Injection
 
@@ -87,3 +108,4 @@ Despite the similar syntax there are several key differences in behavior React d
   - Note: "orphaned" text nodes (not wrapped corresponding HTML tags) are no longer rendered, text nodes will not be considered orphaned if wrapped in a parent component's tags
 - Multiple MicroState objects can exist on the same page
 - MicroState objects rerender all their components with every state change, irrespective of any dependencies
+- Props are passed in a similar manner as they are in React functional components but should not be named `state` or `prevState`

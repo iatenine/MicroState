@@ -1,9 +1,9 @@
 //example components
 
 // Button is only concerned with props, not state
-const Button = ({ props }) => {
-  const id = props.el.replace(/[^\w]/g, "_");
-  return `<div id=${id}>${props.el} <button id='remove-${props.el}'>X</button></div>`;
+const Button = ({ el }) => {
+  const id = el.replace(/[^\w]/g, "_");
+  return `<div id=${id}>${el} <button id='remove-${el}'>X</button></div>`;
 };
 
 // ListItem is only concerned with state, not props

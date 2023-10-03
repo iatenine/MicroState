@@ -123,7 +123,7 @@ class MicroState {
     const executionString = `${componentName}({
       state: ${JSON.stringify(state)}, 
       prevState: ${JSON.stringify(prevState)},
-        props: ${JSON.stringify(props)}
+      ...${JSON.stringify(props)}
       })`;
     const replacementString = eval(executionString);
     const trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
