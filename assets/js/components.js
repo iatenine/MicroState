@@ -2,7 +2,6 @@
 
 // Button is only concerned with props, not state
 const Button = ({ el, index }) => {
-  const id = el.replace(/[^\w]/g, "_");
   const tag = MicroState.useListener([
     {
       name: "click",
@@ -20,7 +19,7 @@ const Button = ({ el, index }) => {
       },
     },
   ]);
-  return `<div id=${id}>${el} <button data-list-id=${index} ${tag}>X</button></div>`;
+  return `<div>${el}<button data-list-id=${index} ${tag}>X</button></div> `;
 };
 
 // ListItem is only concerned with state, not props

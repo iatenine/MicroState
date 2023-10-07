@@ -103,8 +103,6 @@ class MicroState {
   _render(prevState) {
     if (!this.root || !this.mountPoint) return;
     this.onBeforeRender(this.state, prevState);
-    Nauru.events = [];
-    Nauru.count = 0;
     const rootString = this.root({ state: this.state, prevState, props: {} });
     this.mountPoint.innerHTML = this._evaluateString(
       rootString,
