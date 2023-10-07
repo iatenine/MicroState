@@ -4,6 +4,15 @@
  * injected into a DOM element provided upon instantiation.
  */
 
+/**
+ * Nauru
+ * Helper class for MicroState to manage event listeners between renders
+ */
+class Nauru {
+  static count = 0;
+  static events = [];
+}
+
 class MicroState {
   /**
    * inject mountpoint with result of root function
@@ -94,12 +103,16 @@ class MicroState {
   _render(prevState) {
     if (!this.root || !this.mountPoint) return;
     this.onBeforeRender(this.state, prevState);
+    Nauru.events = [];
+    Nauru.count = 0;
     const rootString = this.root({ state: this.state, prevState, props: {} });
     this.mountPoint.innerHTML = this._evaluateString(
       rootString,
       this.state,
       prevState
     );
+    // use Nauru to add listeners
+    MicroState._attachListeners();
     this.onAfterRender(this.state, prevState);
   }
 
@@ -187,5 +200,36 @@ class MicroState {
       .replace(/>/g, "&gt;")
       .replace(/'/g, "&#39;")
       .replace(/"/g, "&quot;");
+  }
+
+  /**
+   * Accepts an array of objects with the following structure:
+   * {
+   *  callback: (e) => any,
+   * name: string,
+   * }
+   * and returns a string to be used as a tag in the component's HTML
+   * example: <button ${tag}>Click Me!</button>
+   * @param {{name: string, callback: () => any}[]} newEvents
+   * @returns {string} tag
+   */
+  static useListener(newEvents) {
+    Nauru.events.push(newEvents);
+    return `data-nauru=${Nauru.count++}`;
+  }
+
+  /**
+   * private function, do not invoke directly
+   * @returns {void}
+   */
+  static _attachListeners() {
+    const elements = document.querySelectorAll(`[data-nauru]`);
+    elements.forEach((element) => {
+      const id = element.dataset.nauru;
+      const events = Nauru.events[id];
+      events.forEach((event) => {
+        element.addEventListener(event.name, event.callback);
+      });
+    });
   }
 }

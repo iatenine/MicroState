@@ -1,9 +1,26 @@
 //example components
 
 // Button is only concerned with props, not state
-const Button = ({ el }) => {
+const Button = ({ el, index }) => {
   const id = el.replace(/[^\w]/g, "_");
-  return `<div id=${id}>${el} <button id='remove-${el}'>X</button></div>`;
+  const tag = MicroState.useListener([
+    {
+      name: "click",
+      callback: (event) => {
+        const id = parseInt(event.target.dataset.listId);
+        const list = stateHandler.getState("list");
+        const filteredList = list.filter((_, index) => index !== id);
+        stateHandler.putState({ list: filteredList });
+      },
+    },
+    {
+      name: "mouseover",
+      callback: (event) => {
+        event.target.style.cursor = "crosshair"; // multiple events can be attached to the same element
+      },
+    },
+  ]);
+  return `<div id=${id}>${el} <button data-list-id=${index} ${tag}>X</button></div>`;
 };
 
 // ListItem is only concerned with state, not props
@@ -14,7 +31,9 @@ const ListItem = ({ state }) => {
   return `${
     state.list.length === 0
       ? `No items`
-      : state.list.map((el) => `<Button el={${el}} />`)
+      : state.list.map((el, index) => {
+          return `<Button el={${el}} index={${index}} />`;
+        })
   }`;
 };
 
@@ -29,5 +48,18 @@ const ListContainer = () => `
 
 // If a component returns a string with no components, it will be evaluated as HTML
 // strings in state object should be sanitized before being passed to components
-const Input = ({ state }) =>
-  `<input id='input' style="width:18rem" placeholder='Enter a new value and press enter' />`;
+const Input = () => {
+  const tag = MicroState.useListener([
+    {
+      name: "keypress",
+      callback: (event) => {
+        if (!/enter/i.test(event.key)) return;
+        stateHandler.putState({
+          list: [...stateHandler.getState("list"), event.target.value],
+        });
+        event.target.value = "";
+      },
+    },
+  ]);
+  return `<input ${tag} style="width:18rem" placeholder='Enter a new value and press enter' />`;
+};

@@ -9,10 +9,8 @@ This repo and its page serve to provide an example of MicroState implementation 
 A MicroState with the root component `Foo` can be instantiated easily as:
 
 ```
-const Foo = () => `
-    <div>
-        Hello, I'm an example component
-    </div>`;
+const Foo = () => `<div>Hello, I'm an example component</div>`;
+
 const microState = new MicroState({
    rootComponent: Foo
   });
@@ -29,6 +27,40 @@ const microState = new MicroState({
   mountPoint: selectedMoutPoint
   });
 ```
+
+## Adding Event Listeners
+
+Attaching event listeners can now be achieved through the `MicroState.useListener()` method as follows:
+
+```
+const Button = ({ el, index }) => {
+  const id = el.replace(/[^\w]/g, "_");
+  const tag = MicroState.useListener([
+    {
+      name: "click",
+      callback: (event) => {
+        const id = parseInt(event.target.dataset.listId);
+        const list = stateHandler.getState("list");
+        const filteredList = list.filter((_, index) => index !== id);
+        stateHandler.putState({ list: filteredList });
+      },
+    },
+    {
+      name: "mouseover",
+      callback: (event) => {
+        event.target.style.cursor = "crosshair"; // multiple events can be attached to the same element
+      },
+    },
+  ]);
+  return `<div id=${id}>${el} <button data-list-id=${index} ${tag}>X</button></div>`;
+};
+```
+
+The method expects an array of objects, each representing a different event and the callback to be used. The method will return a "tag" that must be added to the HTML attributes of the element to receive the event listener(s). Each call will produce a unique tag and can be attached to a different element
+
+It's also possible to use `setOnAfterRender()` to manually attach listeners to elements once rendered but `MicroState.useListener()` frees developers to be less concerned with the MicroState lifecycle
+
+`setOnBeforeRender()` is also provided for convenience but would not be useful for adding event listeners
 
 ## Lifecycle
 
@@ -86,23 +118,13 @@ will render the ListItem component, passing the state, prevState objects as usua
 
 will receive `{name: "The Best Button", value: "400"}` destructured into its first parameter (state and prevState are also included). You may provide any value but will be received by the component as a stringified version of itself and the component is responsible for parsing the value if desired.
 
-## Adding Event Listeners
-
-Adding event listeners directly to the components isn't recommended, instead ensure each component includes an id you can query (avoid spaces, punctuations, etc) based on state and add a callback to dynamically attach them in the `setOnAfterRender()` method. onAfterRender and onBeforeRender callbacks should have the following signature:
-
-```
-(newState: object, prevState: object) => any
-```
-
-onBeforeRender callbacks are provided for convenience but should not be used to add event listeners to MicroState components
-
 ## "Gotchas" for React Developers
 
 Despite the similar syntax there are several key differences in behavior React developers should know:
 
 - JSX-syntax components must be self-closed (Correct: `<Foo />` Incorrect: `<Foo></Foo>`)
 - State is identical for all components in a MicroState instance with the `props` object being a separate key
-- Components do not add event listeners such as `onClick` or `onChange`, see [Adding Event Listeners](#adding-event-listeners) for more
+- Components do not directly handle event listeners, see [Adding Event Listeners](#adding-event-listeners) for more
 - Component attributes do not correspond to HTML attributes, they are passed as props; child components are responsible for using them correctly
 - Closing each tag in a component is recommended but not enforced
   - Note: "orphaned" text nodes (not wrapped corresponding HTML tags) are no longer rendered, text nodes will not be considered orphaned if wrapped in a parent component's tags
