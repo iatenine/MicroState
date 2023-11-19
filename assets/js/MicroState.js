@@ -65,10 +65,20 @@ class MicroState {
    * @param {object} newState
    */
   putState(newState = {}) {
-    this.setState({
-      ...this.state,
-      ...newState,
-    });
+    try {
+      this.setState({
+        ...this.state,
+        ...newState,
+      });
+    } catch (error) {
+      const errorObject = {
+        message: error.message,
+        stack: error.stack,
+        state: this.state,
+        newState,
+      };
+      throw new Error("Failed to update state: ", errorObject);
+      }
   }
   /**
    * Set callback to occur before updating mount point's innerHTML
@@ -104,11 +114,8 @@ class MicroState {
     if (!this.root || !this.mountPoint) return;
     this.onBeforeRender(this.state, prevState);
     const rootString = this.root({ state: this.state, prevState, props: {} });
-    this.mountPoint.innerHTML = this._evaluateString(
-      rootString,
-      this.state,
-      prevState
-    );
+    const str = this._evaluateString(rootString, this.state, prevState);
+    this.mountPoint.innerHTML = str;
     // use Nauru to add listeners
     MicroState._attachListeners();
     this.onAfterRender(this.state, prevState);
@@ -153,7 +160,7 @@ class MicroState {
    * @returns
    */
   _buildObjectFromAttributes(string) {
-    // expect component to have the following form <ComponentName key1=value1 key2=value2 />
+    // expect component to have the following form <ComponentName key1={value1} key2={value2} />
     const regex = /\w+={[^}]*}/g;
     const attributes = string.match(regex);
     const result = {};

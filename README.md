@@ -52,7 +52,13 @@ const Button = ({ el, index }) => {
       },
     },
   ]);
-  return `<div id=${id}>${el} <button data-list-id=${index} ${tag}>X</button></div>`;
+  return `
+    <div>
+      ${el}
+      <button data-list-id=${index} ${tag}>
+        X
+      </button>
+    </div>`;
 };
 ```
 
