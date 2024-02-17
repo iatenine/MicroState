@@ -1,26 +1,3 @@
-// Button is only concerned with props, not state
-const Button = ({ el, index }) => {
-  return `<div>${el}<button data-list-id=${index}>X</button></div> `;
-};
-
-// ListItem is only concerned with state, not props
-// but it provides props dynamically to Button
-const ListItem = ({ state }) => {
-  return `${
-    state.list.length === 0
-      ? `No items`
-      : state.list.map((el, index) => {
-          return `<Button el={${el}} index={${index}} />`;
-        })
-  }`;
-};
-
-const ListContainer = () => `
-<div>
-  <ListItem />  
-</div>
-`;
-
 // create hidden test div in document.body
 const testContainer = document.createElement("div");
 testContainer.id = "test-container";
@@ -35,6 +12,9 @@ const listContainer = new MicroState({
   },
 });
 
+// allow for testing of MicroState without Palau implementation
+const stateHandler = listContainer;
+
 try {
   // empty state tests
   // should mount to testContainer
@@ -46,10 +26,15 @@ try {
   messages.push("Passed: initial state renders by default <div>");
 
   // add item to list
-  listContainer.setState({ list: [{ id: 1, name: "<strong>one</strong>" }] });
+  listContainer.setState({
+    list: [
+      { id: 1, name: "<strong>one</strong>" },
+      { id: 2, name: "<strong>two</strong>" },
+    ],
+  });
   // should have one button
   expect(testContainer.querySelector("button")).to.not.be.null;
-  expect(testContainer.querySelectorAll("button").length).to.equal(1);
+  expect(testContainer.querySelectorAll("button").length).to.equal(2);
   messages.push("Passed: items rerender when setState() is called");
 
   // should be able to fetch state by key name
@@ -68,8 +53,15 @@ try {
   // put state should not interfere with other state
   listContainer.putState({ newList: "test" });
   expect(listContainer.getState("newList")).to.equal("test");
-  expect(listContainer.getState("list").length).to.equal(1);
+  expect(listContainer.getState("list").length).to.equal(2);
   messages.push("Passed: putState() does not interfere with other state");
+
+  // clicking X button updates state properly
+  testContainer.querySelector("button").click();
+  expect(listContainer.getState("list").length).to.equal(
+    1,
+    "clicking X button does not update state properly"
+  );
 
   // setState should completely overwrite state
   listContainer.setState({ list: [] });
