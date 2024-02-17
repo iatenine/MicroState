@@ -5,12 +5,46 @@
  */
 
 /**
+ * Palau
+ * Optional class to act as a state container for MicroState
+ */
+
+class Palau {
+  constructor() {}
+
+  getPageState(key = null) {}
+
+  setPageState(state = null) {}
+
+  putPageState(newState = {}) {}
+
+  // permit users to subscribe callbacks outside of Palau to fire
+  subscribeToPageState(callback, keys = []) {}
+}
+
+/**
  * Nauru
  * Helper class for MicroState to manage event listeners between renders
  */
 class Nauru {
   static count = 0;
   static events = [];
+
+  /**
+   * Accepts an array of objects with the following structure:
+   * {
+   *  callback: (e) => any,
+   * name: string,
+   * }
+   * and returns a string to be used as a tag in the component's HTML
+   * example: <button ${tag}>Click Me!</button>
+   * @param {{name: string, callback: () => any}[]} newEvents
+   * @returns {string} tag
+   */
+  static useListener(newEvents) {
+    Nauru.events.push(newEvents);
+    return `data-nauru=${Nauru.count++}`;
+  }
 }
 
 class MicroState {
@@ -78,7 +112,7 @@ class MicroState {
         newState,
       };
       throw new Error("Failed to update state: ", errorObject);
-      }
+    }
   }
   /**
    * Set callback to occur before updating mount point's innerHTML
@@ -208,15 +242,11 @@ class MicroState {
   }
 
   /**
-   * Accepts an array of objects with the following structure:
-   * {
-   *  callback: (e) => any,
-   * name: string,
-   * }
-   * and returns a string to be used as a tag in the component's HTML
-   * example: <button ${tag}>Click Me!</button>
    * @param {{name: string, callback: () => any}[]} newEvents
    * @returns {string} tag
+   * @deprecated
+   * Kept for reverse-compatibility.
+   * Use Nauru.useListener instead
    */
   static useListener(newEvents) {
     Nauru.events.push(newEvents);

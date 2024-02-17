@@ -2,7 +2,7 @@
 
 // Button is only concerned with props, not state
 const Button = ({ el, index }) => {
-  const tag = MicroState.useListener([
+  const tag = Nauru.useListener([
     {
       name: "click",
       callback: (event) => {
@@ -48,7 +48,7 @@ const ListContainer = () => `
 // If a component returns a string with no components, it will be evaluated as HTML
 // strings in state object should be sanitized before being passed to components
 const Input = () => {
-  const tag = MicroState.useListener([
+  const tag = Nauru.useListener([
     {
       name: "keypress",
       callback: (event) => {
