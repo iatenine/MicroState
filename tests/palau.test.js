@@ -27,7 +27,6 @@ try {
       {
         root: PalauInput,
         mountPoint: inputContainer,
-        // listens: ["title"], // must match keys of pageState
       },
     ],
   });
@@ -121,6 +120,16 @@ try {
 
   messages.push(
     "Passed: Palau.putState() updates state and DOM properly when button is clicked"
+  );
+
+  // test input
+  const inputRef = inputContainer.querySelector("input");
+  inputRef.value = "new item";
+  inputRef.dispatchEvent(new KeyboardEvent("keypress", { key: "Enter" }));
+  expect(Palau.getPageState("list").length).to.equal(3);
+  expect(Palau.getPageState("list")[2]).to.equal("new item");
+  messages.push(
+    "Passed: listen array in component triggers rerenders when state is updated"
   );
 
   messages.push(
