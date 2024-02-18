@@ -47,14 +47,15 @@ const ListContainer = () => `
 
 // If a component returns a string with no components, it will be evaluated as HTML
 // strings in state object should be sanitized before being passed to components
-const PalauInput = ({ palau }) => {
+const PalauInput = (props) => {
+  const { palau } = props;
   const tag = Nauru.useListener([
     {
       name: "keypress",
       callback: (event) => {
         if (!/enter/i.test(event.key)) return;
-        palau.putState({
-          list: [...palau.getState("list"), event.target.value],
+        palau.putPageState({
+          list: [...palau.getPageState("list"), event.target.value],
         });
         event.target.value = "";
       },

@@ -2,7 +2,7 @@
 testContainer.innerHTML = "<div></div>";
 const inputContainer = document.createElement("div");
 inputContainer.id = "input-root";
-inputContainer.style.display = "none";
+// inputContainer.style.display = "none";
 document.body.appendChild(inputContainer);
 const initialPageState = {
   title: "Palau Test",
@@ -20,22 +20,21 @@ try {
     pageState: initialPageState,
     components: [
       {
-        listens: ["title"],
         root: PalauListContainer,
-        mountPoint: testContainer, // does not support default mount point
+        mountPoint: testContainer,
+        listens: ["list"],
       },
       {
         root: PalauInput,
         mountPoint: inputContainer,
-        listens: ["list"], // must have match keys of pageState
+        // listens: ["title"], // must match keys of pageState
       },
     ],
   });
   // initialization test
-  // expect(palau).to.be.a("object");
-  // expect(palau).to.have.property("getPageState");
-  // expect(palau).to.have.property("__setPageState");
-  // expect(palau).to.have.property("putPageState");
+  expect(Palau).to.have.property("getPageState");
+  expect(Palau).to.have.property("__setPageState");
+  expect(Palau).to.have.property("putPageState");
   messages.push("Passed: Palau has expected properties and methods");
 
   // reject invalid configurations
@@ -115,8 +114,7 @@ try {
   const tag = buttonRef.dataset.nauru;
   expect(Palau.getPageState("list").length).to.equal(3);
   buttonRef.click();
-  // expect(Palau.getPageState("list").length).to.equal(2);
-  expect(buttonRef).to.be.null;
+  expect(Palau.getPageState("list").length).to.equal(2);
   testContainer.querySelectorAll("[data-nauru]").forEach((el) => {
     expect(el.dataset.nauru).to.not.equal(tag);
   });

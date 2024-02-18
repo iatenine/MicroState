@@ -31,16 +31,11 @@ class Palau {
     });
 
     Palau.pageState = pageState;
-    Palau.subcribedEvents = {
-      title: [],
-      "list[0].name": [],
-    };
-    Palau.components = [];
-    components.forEach((component) => {
+    components.forEach((component, index) => {
       if (!Palau.subcribedEvents[component.listens]) {
         Palau.subcribedEvents[component.listens] = [];
       }
-      Palau.subcribedEvents[component.listens].push(component);
+      Palau.subcribedEvents[component.listens].push(index);
       component.state = {
         ...Palau.pageState,
       };
@@ -88,10 +83,25 @@ class Palau {
       console.warn("putPageState called with null value. Ignoring.");
       return;
     }
+    const impactedKeys = Object.keys(newState);
     try {
       Palau.__setPageState({
         ...Palau.pageState,
         ...newState,
+      });
+      const subscribedIndices = [];
+      impactedKeys.forEach((key) => {
+        const indices = Palau.subcribedEvents[key] || [];
+        indices.forEach((index) => {
+          if (subscribedIndices.includes(index)) return;
+          subscribedIndices.push(index);
+        });
+      });
+      subscribedIndices.forEach((index) => {
+        const newState = Palau.__listenerStringsToObject(
+          Palau.components[index].listens
+        );
+        Palau.components[index].component.setState(newState);
       });
     } catch (error) {
       const errorObject = {
@@ -100,7 +110,8 @@ class Palau {
         pageState: Palau.pageState,
         newState,
       };
-      throw new Error("Failed to update pageState: ", errorObject);
+      console.error(errorObject);
+      throw new Error("Failed to update pageState: " + errorObject.message);
     }
   }
 
@@ -109,7 +120,7 @@ class Palau {
    * Provided a string, returns a string that can be evaluated to access the
    * value of the key in the pageState object. If excludePageState is true,
    * the string will be returned without the pageState prefix. Example:
-   * "list[0].name" => "this.pageState['list'][0]['name']"
+   * "list[0].name" => "Palau.pageState['list'][0]['name']"
    * @param {string} key
    * @param {boolean} excludePageState
    * @returns {string}
@@ -132,7 +143,7 @@ class Palau {
         return typeof item === "string" ? '["' + item + '"]' : "[" + item + "]";
       })
       .join("");
-    return excludePageState ? `${joined}` : `this.pageState${joined}`;
+    return excludePageState ? `${joined}` : `Palau.pageState${joined}`;
   }
 
   // private function, do not invoke directly
@@ -288,6 +299,7 @@ class MicroState {
     const rootString = this.root({
       state: this.state,
       prevState,
+      palau: this.palau,
       props: {},
     });
     const str = this._evaluateString(rootString, this.state, prevState);
@@ -323,7 +335,6 @@ class MicroState {
       },
       ...${JSON.stringify(props)},
       })`;
-    // console.log(executionString);
     const replacementString = eval(executionString);
     const trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
     return this._evaluateString(
