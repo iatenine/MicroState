@@ -20,12 +20,12 @@ try {
     pageState: initialPageState,
     components: [
       {
-        root: PalauListContainer,
+        rootComponent: PalauListContainer,
         mountPoint: testContainer,
         listens: ["list"],
       },
       {
-        root: PalauInput,
+        rootComponent: PalauInput,
         mountPoint: inputContainer,
       },
     ],

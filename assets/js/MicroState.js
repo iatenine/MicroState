@@ -6,11 +6,11 @@
 
 /**
  * Palau
- * Optional class to act as a state container for MicroState
+ * Singleton class to manage page state and component rerenders
+ *
  */
 
 class Palau {
-  // convert this to be a singleton pattern using all static methods and properties
   static pageState = {};
   static components = [];
   static subcribedEvents = {};
@@ -23,7 +23,7 @@ class Palau {
       throw new Error("components must be an array");
     }
     components.forEach((component) => {
-      if (!component.root || !component.mountPoint) {
+      if (!component.rootComponent || !component.mountPoint) {
         throw new Error(
           "Invalid component configuration: mountPoint and root are required in each component"
         );
@@ -36,14 +36,11 @@ class Palau {
         Palau.subcribedEvents[component.listens] = [];
       }
       Palau.subcribedEvents[component.listens].push(index);
+      const newState = Palau.__listenerStringsToObject(component.listens);
       component.state = {
-        ...Palau.pageState,
+        ...newState,
       };
-      component.palau = {
-        getPageState: Palau.getPageState,
-        putPageState: (obj) => Palau.putPageState(obj),
-      };
-      component.rootComponent = component.root;
+      // component.rootComponent = component.root;
       Palau.components.push({
         component: new MicroState(component),
         listens: component.listens,
@@ -55,27 +52,6 @@ class Palau {
     if (key === null || typeof key !== "string") return Palau.pageState;
     const executionString = Palau.__convertKeyToExecutionString(key);
     return eval(executionString);
-  }
-
-  /**
-   * update pageState with new state object. This is a destructive operation
-   * that will not trigger a re-render of the component. Use putPageState()
-   * instead when possible.
-   * @param {object} state
-   * @returns
-   */
-  static __setPageState(state = null) {
-    if (state === null) {
-      console.warn("setPageState called with null value. Ignoring.");
-      return;
-    }
-    if (typeof state !== "object") {
-      throw new Error("setPageState requires an object");
-    }
-    dispatchEvent(
-      new Event("updatePalauState:", { prevState: Palau.pageState, state })
-    );
-    Palau.pageState = state;
   }
 
   static putPageState(newState = null) {
@@ -115,8 +91,29 @@ class Palau {
     }
   }
 
-  // private function, do not invoke directly
   /**
+   * update pageState with new state object. This is a destructive operation
+   * that will not trigger a re-render of the component. Use putPageState()
+   * instead when possible.
+   * @param {object} state
+   * @returns
+   */
+  static __setPageState(state = null) {
+    if (state === null) {
+      console.warn("setPageState called with null value. Ignoring.");
+      return;
+    }
+    if (typeof state !== "object") {
+      throw new Error("setPageState requires an object");
+    }
+    dispatchEvent(
+      new Event("updatePalauState:", { prevState: Palau.pageState, state })
+    );
+    Palau.pageState = state;
+  }
+
+  /**
+   * private function, do not invoke directly
    * Provided a string, returns a string that can be evaluated to access the
    * value of the key in the pageState object. If excludePageState is true,
    * the string will be returned without the pageState prefix. Example:
@@ -146,8 +143,8 @@ class Palau {
     return excludePageState ? `${joined}` : `Palau.pageState${joined}`;
   }
 
-  // private function, do not invoke directly
   /**
+   * private function, do not invoke directly
    * Provided an array of strings, returns an object with matching keys,
    * populating the values with the current state of the page. Until nested
    * listeners are supported, only Object.keys() is needed for the inverse
@@ -205,18 +202,16 @@ class MicroState {
    *  state: object,
    *  prevState: object,
    *  props: object,
-   *  palau?: object
    * }) => string,
    * state?: object,
    * mountPoint?: HTMLElement}} Config
    */
-  constructor({ rootComponent, state = {}, mountPoint = null, palau = null }) {
+  constructor({ rootComponent, state = {}, mountPoint = null }) {
     if (!mountPoint && !document.querySelector("#root"))
       throw new Error(
         "DOM must contain element with id of root or mountPoint must be provided"
       );
     if (!rootComponent) throw new Error("rootComponent is required");
-    this.palau = palau;
     this.setState(state);
     this.root = rootComponent;
     this.onAfterRender = () => {};
@@ -299,7 +294,6 @@ class MicroState {
     const rootString = this.root({
       state: this.state,
       prevState,
-      palau: this.palau,
       props: {},
     });
     const str = this._evaluateString(rootString, this.state, prevState);
@@ -329,10 +323,6 @@ class MicroState {
     const executionString = `${componentName}({
       state: ${JSON.stringify(state)}, 
       prevState: ${JSON.stringify(prevState)},
-      palau: {
-        putPageState: (newState) => this.putPageState(newState),
-        getPageState: (key) => this.getPageState(key),
-      },
       ...${JSON.stringify(props)},
       })`;
     const replacementString = eval(executionString);
@@ -344,14 +334,6 @@ class MicroState {
     )
       .match(trimOuter)
       .join("");
-  }
-
-  putPageState(newState = this.state) {
-    Palau.putPageState(newState);
-  }
-
-  getPageState(key = null) {
-    return Palau.getPageState(key);
   }
 
   /**
