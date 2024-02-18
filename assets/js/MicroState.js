@@ -1,13 +1,10 @@
 /**
- * MicroState
- * A state container to render HTML strings returned by components,
- * injected into a DOM element provided upon instantiation.
- */
-
-/**
  * Palau
- * Singleton class to manage page state and component rerenders
- *
+ * Singleton class to manage page state and Microstate component injection
+ * Components passed in Constructor will be rendered automatically
+ * and only updated when pageState keys found in their listen array
+ * are updated
+ * @dependency MicroState
  */
 
 class Palau {
@@ -15,6 +12,19 @@ class Palau {
   static components = [];
   static subcribedEvents = {};
 
+  /**
+   * initialize page state and mount/subscribe components.
+   * Component states will be derived from the pageState object
+   * and only include keys found in their listen array
+   * @param {{
+   * pageState: object,
+   * components: {
+   * rootComponent: MicroStateComponent,
+   * mountPoint: HTMLElement,
+   * listens?: string[],
+   * }[]
+   * }} pageState
+   */
   constructor({ pageState = {}, components = [] }) {
     if (pageState !== Object(pageState)) {
       throw new Error("pageState must be an object if specified");
@@ -32,6 +42,7 @@ class Palau {
 
     Palau.pageState = pageState;
     components.forEach((component, index) => {
+      if (!component.listens) component.listens = [];
       if (!Palau.subcribedEvents[component.listens]) {
         Palau.subcribedEvents[component.listens] = [];
       }
@@ -40,7 +51,6 @@ class Palau {
       component.state = {
         ...newState,
       };
-      // component.rootComponent = component.root;
       Palau.components.push({
         component: new MicroState(component),
         listens: component.listens,
@@ -48,12 +58,25 @@ class Palau {
     });
   }
 
+  /**
+   * Return pageState object, or specific key if provided
+   * keys can specify nested values such as "list[0].name"
+   * @param {string} key?
+   * @returns
+   */
   static getPageState(key = null) {
     if (key === null || typeof key !== "string") return Palau.pageState;
     const executionString = Palau.__convertKeyToExecutionString(key);
     return eval(executionString);
   }
 
+  /**
+   * update state of keys present in newState object
+   * and re-render subscribed components. Unlisted keys
+   * will not be updated
+   * @param {object} newState
+   * @returns
+   */
   static putPageState(newState = null) {
     if (newState === null) {
       console.warn("putPageState called with null value. Ignoring.");
@@ -92,6 +115,7 @@ class Palau {
   }
 
   /**
+   * private function, do not invoke directly
    * update pageState with new state object. This is a destructive operation
    * that will not trigger a re-render of the component. Use putPageState()
    * instead when possible.
@@ -190,6 +214,12 @@ class Nauru {
     return `data-nauru=${Nauru.count++}`;
   }
 }
+
+/**
+ * MicroState
+ * A state container to render HTML strings returned by components,
+ * injected into a DOM element provided upon instantiation.
+ */
 
 class MicroState {
   /**
