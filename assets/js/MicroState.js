@@ -10,16 +10,152 @@
  */
 
 class Palau {
-  constructor() {}
+  // convert this to be a singleton pattern using all static methods and properties
+  static pageState = {};
+  static components = [];
+  static subcribedEvents = {};
 
-  getPageState(key = null) {}
+  constructor({ pageState = {}, components = [] }) {
+    if (pageState !== Object(pageState)) {
+      throw new Error("pageState must be an object if specified");
+    }
+    if (!Array.isArray(components)) {
+      throw new Error("components must be an array");
+    }
+    components.forEach((component) => {
+      if (!component.root || !component.mountPoint) {
+        throw new Error(
+          "Invalid component configuration: mountPoint and root are required in each component"
+        );
+      }
+    });
 
-  setPageState(state = null) {}
+    Palau.pageState = pageState;
+    Palau.subcribedEvents = {
+      title: [],
+      "list[0].name": [],
+    };
+    Palau.components = [];
+    components.forEach((component) => {
+      if (!Palau.subcribedEvents[component.listens]) {
+        Palau.subcribedEvents[component.listens] = [];
+      }
+      Palau.subcribedEvents[component.listens].push(component);
+      component.state = {
+        ...Palau.pageState,
+      };
+      component.palau = {
+        getPageState: Palau.getPageState,
+        putPageState: (obj) => Palau.putPageState(obj),
+      };
+      component.rootComponent = component.root;
+      Palau.components.push({
+        component: new MicroState(component),
+        listens: component.listens,
+      });
+    });
+  }
 
-  putPageState(newState = {}) {}
+  static getPageState(key = null) {
+    if (key === null || typeof key !== "string") return Palau.pageState;
+    const executionString = Palau.__convertKeyToExecutionString(key);
+    return eval(executionString);
+  }
 
-  // permit users to subscribe callbacks outside of Palau to fire
-  subscribeToPageState(callback, keys = []) {}
+  /**
+   * update pageState with new state object. This is a destructive operation
+   * that will not trigger a re-render of the component. Use putPageState()
+   * instead when possible.
+   * @param {object} state
+   * @returns
+   */
+  static __setPageState(state = null) {
+    if (state === null) {
+      console.warn("setPageState called with null value. Ignoring.");
+      return;
+    }
+    if (typeof state !== "object") {
+      throw new Error("setPageState requires an object");
+    }
+    dispatchEvent(
+      new Event("updatePalauState:", { prevState: Palau.pageState, state })
+    );
+    Palau.pageState = state;
+  }
+
+  static putPageState(newState = null) {
+    if (newState === null) {
+      console.warn("putPageState called with null value. Ignoring.");
+      return;
+    }
+    try {
+      Palau.__setPageState({
+        ...Palau.pageState,
+        ...newState,
+      });
+    } catch (error) {
+      const errorObject = {
+        message: error.message,
+        stack: error.stack,
+        pageState: Palau.pageState,
+        newState,
+      };
+      throw new Error("Failed to update pageState: ", errorObject);
+    }
+  }
+
+  // private function, do not invoke directly
+  /**
+   * Provided a string, returns a string that can be evaluated to access the
+   * value of the key in the pageState object. If excludePageState is true,
+   * the string will be returned without the pageState prefix. Example:
+   * "list[0].name" => "this.pageState['list'][0]['name']"
+   * @param {string} key
+   * @param {boolean} excludePageState
+   * @returns {string}
+   */
+  static __convertKeyToExecutionString(key, excludePageState = false) {
+    const indices = key.match(/[\d+]/g);
+    const keys = key
+      .split(".")
+      .map((item) => {
+        return item.split(/[\d+]/);
+      })
+      .flat();
+    const combine = keys.map((item) => {
+      if (item === "]") return parseInt(indices.pop());
+      if (item.endsWith("[")) return item.slice(0, -1);
+      return item;
+    });
+    const joined = combine
+      .map((item) => {
+        return typeof item === "string" ? '["' + item + '"]' : "[" + item + "]";
+      })
+      .join("");
+    return excludePageState ? `${joined}` : `this.pageState${joined}`;
+  }
+
+  // private function, do not invoke directly
+  /**
+   * Provided an array of strings, returns an object with matching keys,
+   * populating the values with the current state of the page. Until nested
+   * listeners are supported, only Object.keys() is needed for the inverse
+   * @param {string[]} strings
+   * @returns {object}
+   */
+  static __listenerStringsToObject(strings) {
+    const result = {};
+    const uniqueStrings = [...new Set(strings)];
+    uniqueStrings.forEach((string) => {
+      const executionString = Palau.__convertKeyToExecutionString(string, true);
+      const key = executionString
+        .replace("]", "")
+        .replace("[", "")
+        .replace(/"/g, "");
+      result[key] = eval(`this.pageState${executionString}`);
+    });
+    return result;
+  }
 }
 
 /**
@@ -57,17 +193,19 @@ class MicroState {
    * rootComponent: (contextObject: {
    *  state: object,
    *  prevState: object,
-   *  props: object
+   *  props: object,
+   *  palau?: object
    * }) => string,
    * state?: object,
    * mountPoint?: HTMLElement}} Config
    */
-  constructor({ rootComponent, state = {}, mountPoint = null }) {
+  constructor({ rootComponent, state = {}, mountPoint = null, palau = null }) {
     if (!mountPoint && !document.querySelector("#root"))
       throw new Error(
         "DOM must contain element with id of root or mountPoint must be provided"
       );
     if (!rootComponent) throw new Error("rootComponent is required");
+    this.palau = palau;
     this.setState(state);
     this.root = rootComponent;
     this.onAfterRender = () => {};
@@ -147,7 +285,11 @@ class MicroState {
   _render(prevState) {
     if (!this.root || !this.mountPoint) return;
     this.onBeforeRender(this.state, prevState);
-    const rootString = this.root({ state: this.state, prevState, props: {} });
+    const rootString = this.root({
+      state: this.state,
+      prevState,
+      props: {},
+    });
     const str = this._evaluateString(rootString, this.state, prevState);
     this.mountPoint.innerHTML = str;
     // use Nauru to add listeners
@@ -175,8 +317,13 @@ class MicroState {
     const executionString = `${componentName}({
       state: ${JSON.stringify(state)}, 
       prevState: ${JSON.stringify(prevState)},
-      ...${JSON.stringify(props)}
+      palau: {
+        putPageState: (newState) => this.putPageState(newState),
+        getPageState: (key) => this.getPageState(key),
+      },
+      ...${JSON.stringify(props)},
       })`;
+    // console.log(executionString);
     const replacementString = eval(executionString);
     const trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
     return this._evaluateString(
@@ -186,6 +333,14 @@ class MicroState {
     )
       .match(trimOuter)
       .join("");
+  }
+
+  putPageState(newState = this.state) {
+    Palau.putPageState(newState);
+  }
+
+  getPageState(key = null) {
+    return Palau.getPageState(key);
   }
 
   /**

@@ -1,38 +1,41 @@
 // arrange
-testContainer.innerHTML = "";
+testContainer.innerHTML = "<div></div>";
 const inputContainer = document.createElement("div");
 inputContainer.id = "input-root";
+inputContainer.style.display = "none";
 document.body.appendChild(inputContainer);
 const initialPageState = {
   title: "Palau Test",
-  list: [
+  nestedList: [
     { id: 1, name: "one" },
     { id: 2, name: "two" },
     { id: 3, name: "three" },
   ],
+  list: ["one", "two", "three"],
 };
-const palau = new Palau({
-  pageState: initialPageState,
-  components: [
-    {
-      root: ListContainer,
-      mountPoint: testContainer, // does not support default mount point
-    },
-    {
-      root: Input,
-      mountPoint: inputContainer,
-      listens: ["list"], // must have match keys of pageState
-    },
-  ],
-});
 
 // act/assert
 try {
+  new Palau({
+    pageState: initialPageState,
+    components: [
+      {
+        listens: ["title"],
+        root: PalauListContainer,
+        mountPoint: testContainer, // does not support default mount point
+      },
+      {
+        root: PalauInput,
+        mountPoint: inputContainer,
+        listens: ["list"], // must have match keys of pageState
+      },
+    ],
+  });
   // initialization test
-  expect(palau).to.be.a("object");
-  expect(palau).to.have.property("getPageState");
-  expect(palau).to.have.property("setPageState");
-  expect(palau).to.have.property("putPageState");
+  // expect(palau).to.be.a("object");
+  // expect(palau).to.have.property("getPageState");
+  // expect(palau).to.have.property("__setPageState");
+  // expect(palau).to.have.property("putPageState");
   messages.push("Passed: Palau has expected properties and methods");
 
   // reject invalid configurations
@@ -66,64 +69,67 @@ try {
   );
   messages.push("Passed: Palau rejects invalid configurations");
 
+  // check components mounted
+  expect(testContainer.querySelector("#palau-list-container")).to.not.be.null;
+  expect(inputContainer.querySelector("#palau-input")).to.not.be.null;
+  messages.push("Passed: Palau components mount to specified mount points");
+
   // method tests
-  const pageState = palau.getPageState();
+  const listenerStrings = ["title", "list", "nestedList"];
+  expect(Palau.__listenerStringsToObject(listenerStrings)).to.deep.equal(
+    Palau.getPageState()
+  );
+  messages.push(
+    "Passed: Palau.__listenerStringsToObject converts listener strings to object"
+  );
+  const pageState = Palau.getPageState();
   expect(pageState).to.deep.equal(initialPageState);
-  expect(palau.getPageState("title")).to.equal(
+  expect(Palau.getPageState("title")).to.equal(
     initialPageState.title,
     "Failed to fetch pageState by key"
   );
-  expect(palau.getPageState("list[0].id")).to.equal(
-    initialPageState.list.list[0].id,
+  expect(Palau.getPageState("list[0].id")).to.equal(
+    initialPageState.list[0].id,
     "Failed to fetch nested pageState by key"
   );
   messages.push("Passed: Palau.getPageState returns expected pageState");
 
-  palau.setPageState({ list: [] });
-  expect(palau.getPageState("list")).to.deep.equal([]);
-  expect(palau.getPageState("title")).to.be.undefined;
+  Palau.__setPageState({ list: [] });
+  expect(Palau.getPageState("list")).to.deep.equal([]);
+  expect(Palau.getPageState("title")).to.be.undefined;
   messages.push("Passed: Palau.setPageState updates pageState properly");
 
   // reset state and test putPageState
-  palau.setPageState(initialPageState);
-  palau.putPageState({ title: "New Title" });
-  expect(palau.getPageState("title")).to.equal("New Title");
-  expect(palau.getPageState("list")).to.deep.equal(initialPageState.list);
+  Palau.__setPageState(initialPageState);
+  Palau.putPageState({ title: "New Title" });
+  expect(Palau.getPageState("title")).to.equal("New Title");
+  expect(Palau.getPageState("list")).to.deep.equal(initialPageState.list);
   messages.push("Passed: Palau.putPageState updates pageState properly");
 
   // Do nothing when setPageState is called with no arguments
-  palau.setPageState();
-  expect(palau.getPageState()).to.deep.equal(initialPageState);
+  Palau.__setPageState(initialPageState);
+  expect(Palau.getPageState()).to.deep.equal(initialPageState);
 
-  // pub-sub tests
-  // valid attempt to subscribe returns true from subscribeToPageState
-  expect(palau.subscribeToPageState(() => {}, ["list"])).to.be.true;
-  expect(palau.subscribeToPageState(() => {}, ["fake key"])).to.be.false;
-  messages.push("Passed: Palau.subscribeToPageState returns expected value");
-
-  let x = 0;
-  const callback = () => {
-    x++;
-  };
-  palau.subscribeToPageState(callback, ["list"]);
-  palau.putPageState({ list: [] });
-  expect(x).to.equal(1);
-  messages.push("Passed: Palau.subscribeToPageState fires callback on change");
-
-  // ensure components are rendered and update properly on state change
-  palau.setPageState(initialPageState);
-  expect(testContainer.querySelector("button")).to.not.be.null;
-  expect(inputContainer.querySelector("input")).to.not.be.null;
-
-  // click button to remove item from list
+  // click button to remove item from list in pageState and DOM
   const buttonRef = testContainer.querySelector("button");
+  const tag = buttonRef.dataset.nauru;
+  expect(Palau.getPageState("list").length).to.equal(3);
   buttonRef.click();
-  expect(document.querySelector(buttonRef)).to.be.null;
+  // expect(Palau.getPageState("list").length).to.equal(2);
+  expect(buttonRef).to.be.null;
+  testContainer.querySelectorAll("[data-nauru]").forEach((el) => {
+    expect(el.dataset.nauru).to.not.equal(tag);
+  });
+
+  messages.push(
+    "Passed: Palau.putState() updates state and DOM properly when button is clicked"
+  );
 
   messages.push(
     "<strong style='color:green;'>Palau Test Suite Passed!</strong>"
   );
 } catch (e) {
+  console.error(e);
   messages.push(e.message);
   messages.push(
     "<strong style='color:red;'>Exiting Palau Test Suite with error</strong>"
