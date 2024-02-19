@@ -11,6 +11,7 @@ class Palau {
   static pageState = {};
   static components = [];
   static subcribedEvents = {};
+  static instantiated = false;
 
   /**
    * initialize page state and mount/subscribe components.
@@ -26,6 +27,11 @@ class Palau {
    * }} pageState
    */
   constructor({ pageState = {}, components = [] }) {
+    if (this.instantiated) {
+      throw new Error(
+        "Palau has already been instantiated. Use Palau.putPageState() to manage state"
+      );
+    }
     if (pageState !== Object(pageState)) {
       throw new Error("pageState must be an object if specified");
     }
@@ -56,6 +62,7 @@ class Palau {
         listens: component.listens,
       });
     });
+    this.instantiated = true;
   }
 
   /**
@@ -83,6 +90,13 @@ class Palau {
       return;
     }
     const impactedKeys = Object.keys(newState);
+    // Prevent unnecessary re-renders
+    impactedKeys.forEach((key) => {
+      if (Palau.pageState[key] === newState[key]) {
+        impactedKeys.splice(impactedKeys.indexOf(key), 1);
+        delete newState[key];
+      }
+    });
     try {
       Palau.__setPageState({
         ...Palau.pageState,
