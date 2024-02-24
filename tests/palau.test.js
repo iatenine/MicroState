@@ -16,7 +16,36 @@ const initialPageState = {
 
 // act/assert
 try {
-  new Palau({
+  // reject invalid configurations
+  // add custom message
+  expect(() => Palau.init({ pageState: "invalid" })).to.throw(
+    "pageState must be an object if specified"
+  );
+  expect(() =>
+    Palau.init({
+      components: [
+        {
+          root: ListContainer,
+        },
+      ],
+    })
+  ).to.throw(
+    "Invalid component configuration: mountPoint and root are required in each component"
+  );
+  expect(() =>
+    Palau.init({
+      components: [
+        {
+          mountPoint: testContainer,
+        },
+      ],
+    })
+  ).to.throw(
+    "Invalid component configuration: mountPoint and root are required in each component"
+  );
+  messages.push("Passed: Palau rejects invalid configurations");
+
+  Palau.init({
     pageState: initialPageState,
     components: [
       {
@@ -38,34 +67,10 @@ try {
 
   // reject invalid configurations
   // add custom message
-  expect(() => new Palau({ pageState: "invalid" })).to.throw(
-    "pageState must be an object if specified"
+  expect(() => Palau.init({ pageState: "invalid" })).to.throw(
+    "Palau has already been instantiated"
   );
-  expect(
-    () =>
-      new Palau({
-        components: [
-          {
-            root: ListContainer,
-          },
-        ],
-      })
-  ).to.throw(
-    "Invalid component configuration: mountPoint and root are required in each component"
-  );
-  expect(
-    () =>
-      new Palau({
-        components: [
-          {
-            mountPoint: testContainer,
-          },
-        ],
-      })
-  ).to.throw(
-    "Invalid component configuration: mountPoint and root are required in each component"
-  );
-  messages.push("Passed: Palau rejects invalid configurations");
+  messages.push("Passed: Palau prevents reinitialization");
 
   // check components mounted
   expect(testContainer.querySelector("#palau-list-container")).to.not.be.null;

@@ -1,93 +1,50 @@
 ## MicroState
 
-A UI component library with JSX-like syntax designed to be self-contained and injectable into existing webpages. This enables modern client-side features like reusable components, prop passing and state updates without requiring a full SPA migration.
+A minimal suite of tools designed to have a very low learning curve, no build step and easily inject into existing webpages, enabling modern features like reusable components, prop passing and state updates without requiring a full SPA migration.
+
+MicroState is built on 3 primary tools:
+
+- [Tuvalu Components](#tuvalu): Callback functions returning JSX-like strings
+- [Palau](#palau): Centralized page state and component injection tool
+- [Nauru](#nauru): Adds event listeners to Tuvalu components without worrying about the lifecycle
+
+## Contents
 
 - [MicroState](#microstate)
-- [Installation](#installation)
-- [Rules](#rules)
+- [Contents](#contents)
+- [Getting Started](#getting-started)
+- [Tuvalu](#tuvalu)
+  - [Static Components](#static-components)
+  - [Dynamic Components](#dynamic-components)
+- [Palau](#palau)
+  - [Injecting Components](#injecting-components)
+  - [Managing State](#managing-state)
+- [Nauru](#nauru)
+- [Reference](#reference)
+  - [API](#api)
+    - [Palau.init](#palauinit)
+    - [Palau.getPageState](#palaugetpagestate)
+    - [Palau.putPageState](#palauputpagestate)
+    - [Nauru.useListener](#nauruuselistener)
   - [Rules for Creating Components](#rules-for-creating-components)
   - [Rules for Passing Props](#rules-for-passing-props)
-- [Components](#components)
-  - [Basic (Stateless) Components](#basic-stateless-components)
-  - [Stateful Components](#stateful-components)
-- [Injecting Components](#injecting-components)
-  - [Palau](#palau)
+- [Advanced Usage](#advanced-usage)
+  - [State and Lifecycle](#state-and-lifecycle)
   - [Manual Injection](#manual-injection)
-- [State and Lifecycle](#state-and-lifecycle)
-- [Event Listeners](#event-listeners)
 
-## Installation
+## Getting Started
 
-Add a copy of [MicroState.js](https://github.com/iatenine/MicroState/blob/main/assets/js/MicroState.js) to your project to enable it.
+To enable, MicroState, add a copy of [MicroState.js](https://github.com/iatenine/MicroState/blob/main/assets/js/MicroState.js) to your project (no CDN available at this time):
 
-## Rules
+General usage of MicroState is as follows:
 
-This section is provided as a reference for later and may not yet make sense, if you're looking to get started, skip to the [Components](#components) section
+1.  Create components using Tuvalu
+2.  Initialize Palau to inject components within their mount points and set an initial page state
+3.  Use Palau.putState() anytime page state needs to be updated
 
-### Rules for Creating Components
+## Tuvalu
 
-- Component should be callbacks returning strings saved to a variable in PascalCase
-- HTML elements in the returned string are lowercase
-- All nested components are wrapped in **self-closing** tags and share the name of the variable they're saved to (i.e. `<Foo />` for a component saved to `Foo`).
-- All HTML tags opened in a string are closed
-
-### Rules for Passing Props
-
-- must be handled by the receiving component, even if they share a name with an HTML attribute
-- should be passed similar to how they are in React functional components (`<Component propName={value} />`)
-- have a structure of `propName={<value>}`
-- cannot be named `state` or `prevState`
-- component will receive the key-value pair of `propName: <value>` added to the object of its first parameter
-- values will be stringified
-- values will have HTML special characters escaped to prevent XSS attacks
-
-## Components
-
-All MicroState components are callbacks returning strings with a structure designed to be familiar to React developers.
-
-### Basic (Stateless) Components
-
-To create our first component named `Foo` simply add:
-
-```javascript
-const Foo = () => `<div>Hello, I'm an example component</div>`;
-```
-
-By abiding by the first 2 [rules of creating components](#rules-for-creating-components), we enable other components to nest `<Foo />`:
-
-```javascript
-const Bar = () => `<body>
-  <Foo />
-</body>`;
-```
-
-`<Bar />` is now also a component and was able to utilize `<Foo />` by following [the third rule](#rules-for-creating-components) (MicroState components do not accept child nodes as props). When rendered, `Bar()` will return
-
-```javascript
-`<body>
-  <div>Hello, I'm an example component</div>
-</body>`
-```
-
-While the final rule (close all tags that are opened) simplifies tracking down errors. However, it's worth mentioning an opening tag does not need to be the parent of the entire component:
-
-```javascript
-// Acceptable
-const SiblingExample = () => `
-  <div>Hello!</div>
-  <div>Goodbye!</div>`;
-
-// Will not render text node
-const OrphanedComponent = () => `<div />All alone`;
-```
-
-Great! But not particularly useful.
-
-Let's add some state to our component to add reusability and separate concerns:
-
-### Stateful Components
-
-All components managed by a MicroState object (or [Palau](#palau)) should adhere to the following structure:
+All Tuvalu components are pure, and therefore stateless, functions (state management covered in the [Palau](#palau) section) returning strings with a structure designed to be familiar to JSX developers. They are called with the following structure when injected or updated:
 
 ```javascript
 ({
@@ -97,14 +54,37 @@ All components managed by a MicroState object (or [Palau](#palau)) should adhere
 }) => string
 ```
 
-Since our components so far have been stateless and utilize no props, parameters were ignored but consider these components:
+### Static Components
+
+To create our first Tuvalu component named `Foo` simply add:
 
 ```javascript
-const Button = ({ el }) => {
-  const id = el.replace(/[^\w]/g, "_"); // protects against generating invalid IDs
-  return `<div id=${id}>${el} <button id='remove-${el}'>X</button></div>`;
-};
+const Foo = () => `<div>Hello, I'm an example component</div>`;
+```
 
+By saving the callback to a variable in PascalCase, we enable other components to nest `<Foo />`:
+
+```javascript
+const Bar = () => `<body>
+  <Foo />
+</body>`;
+```
+
+`<Bar />` is now also a component and was able to nest `<Foo />` as its name matches that of its variable and is wrapped in self-closing tags (Tuvalu components do not accept child nodes as props). When rendered, `Bar()` will return
+
+```javascript
+`<body>
+  <div>Hello, I'm an example component</div>
+</body>`;
+```
+
+Great! Now let's make some dynamic components using props:
+
+### Dynamic Components
+
+Since our components so far have utilized no props, parameters were ignored but consider the following: given a component `<ListItem />` with an initial state of `{list: ['eggs', 'milk']}` (details on how to do that [later](#injecting-components)). `<ListItem />` can destructure `state` to access and map through `list`, passing each value as a prop to `<Button />`.
+
+```javascript
 const ListItem = ({ state }) => {
   return `${
     state.list.length === 0
@@ -112,11 +92,25 @@ const ListItem = ({ state }) => {
       : state.list.map((el) => `<Button el={${el}} />`)
   }`;
 };
+
+const Button = ({ el }) => {
+  const id = el.replace(/[^\w]/g, "_"); // protects against generating invalid IDs
+  return `<div id=${id}>${el} <button id='remove-${el}'>X</button></div>`;
+};
 ```
 
-We'll assume `<ListItem />` has been injected to the DOM with an initial state of `{list: ['eggs', 'milk']}` (details on how to do that [below](#injecting-components)).
+**_Note:_** Careful not to confuse the curly braces `el={<some-value>}` used to wrap prop values with the string interpolation braces `${<variable-name>}` such as the `<Button el={${el}} />` example above.
 
-Note how `<ListItem />` destructures the object for `state` and is able to map through its values, passing each one as a prop to `<Button />`. It can also read `prevState` on each render:
+Because components are stateless, `state` and `prevState` are identical between root and nested components with each `<Button />` only differentiated by its props:
+
+```javascript
+const Button = ({ el }) => {
+  const id = el.replace(/[^\w]/g, "_"); // protects against generating invalid IDs
+  return `<div id=${id}>${el} <button id='remove-${el}'>X</button></div>`;
+};
+```
+
+It's also possible to read `prevState` on each render:
 
 ```javascript
 const ListItem = ({ state, prevState }) => {
@@ -130,46 +124,37 @@ const ListItem = ({ state, prevState }) => {
 };
 ```
 
-Careful not to confuse the curly braces `el={<some-value>}` used to wrap prop values with the string interpolation braces `${<variable-name>}`.
+For more details, review the [Rules for Creating Components](#rules-for-creating-components) and [Rules for Passing Props](#rules-for-passing-props) sections
 
-The state and prevState objects are identical between the root and its nested components (details in the next section) so every `<Button />` would render identically without the `el` prop.
+## Palau
 
-```javascript
-const Button = ({ el }) => {
-  const id = el.replace(/[^\w]/g, "_"); // protects against generating invalid IDs
-  return `<div id=${id}>${el} <button id='remove-${el}'>X</button></div>`;
-};
-```
+_Manual injection is still supported but has been moved to the [Advanced Usage](#advanced-usage) section as it requires a deeper understanding of the lifecycle._
 
-For more details, review the [Rules for Passing Props](#rules-for-passing-props) section
+Palau is a centralized state management tool for MicroState. It will manage injecting and updating Tuvalu components following a pub/sub pattern.
 
-## Injecting Components
+### Injecting Components
 
-Once your components are defined, there are 2 methods for component injection: [Palau](#palau) or [manual injection](#manual-injection). Generally, the Palau state management tool is recommended but manual injection can be used by those who need more granular control.
-
-### Palau
-
-Palau is a state management tool included with MicroState that centralizes state, automatically injecting and updating components using a pub/sub pattern. This should eliminate the need to call `new MicroState()` directly and is constructed with the following structure:
+To inject components, initialize Palau with all root components and their mount points by calling Palau.init() with the following structure:
 
 ```javascript
-new Palau({
-  pageState: object,
+Palau.init({
+  pageState?: object,
   components: [
     {
       rootComponent: ({ state, prevState }) => string,
       mountPoint: HTMLElement,
-      listens: string[]
+      listens?: string[]
     }
   ]
 });
 ```
 
-**_Note:_** Palau should only be constructed once, then interacted exclusively with via the `Palau.getPageState()` and `Palau.putPageState()` methods.
+**_Note:_** This should only be done once and attempts to call `Palau.init()` a 2nd time on a page will throw an error (unless previous calls failed due to an invalid configuration).
 
-Given an application with components of `<Input />` and `<ListContainer />` which needs to update and display a `list` array respecitvely, we can inject them as follows:
+To demonstrate, given an application with components of `<Input />` and `<ListContainer />` which need to update and display a `list` array respecitvely, we can inject them as follows:
 
 ```javascript
-new Palau({
+Palau.init({
   pageState: {
     title: "Palau Example"
     list: []
@@ -186,21 +171,25 @@ new Palau({
 })
 ```
 
-Note the `listens` array on `<ListContainer />`, this tells Palau to provide a copy of that key from the pageState to the component's state and rerender it only when it changes.
+The `listens` array on `<ListContainer />` tells Palau to rerender that component only when values in the specified keys are updated by `Palau.putState()`. Conversely, `<Input />` will never rerender, which would otherwise result in losing focus.
 
 Since nothing listens to `title`, it can be updated without triggering a rerender of any component.
 
-Despite not having list passed to its state, `<Input />` can read and update pageState by calling `Palau.getPageState()` and `Palau.putPageState()` as follows:
+### Managing State
+
+Components only receive keys from `pageState` that they listen for, so `<ListContainer />` will only receive `list` and `Input` will receive an empty object. Despite this, `<Input />` can read and update pageState by calling `Palau.getPageState()` and `Palau.putPageState()` as follows:
 
 ```javascript
 const PalauInput = () => {
+  // get the current list state
   const currentListState = Palau.getPageState("list");
-  // More on Nauru and adding listeners within components later
+  // More on Nauru and adding listeners later
   const tag = Nauru.useListener([
     {
       name: "keypress",
       callback: (event) => {
         if (!/enter/i.test(event.key)) return;
+        // append the new value to the list and clear the input
         Palau.putPageState({
           list: [...currentListState, event.target.value],
         });
@@ -212,50 +201,7 @@ const PalauInput = () => {
 };
 ```
 
-Note that all Palau and Nauru methods are static and therefore do not need to be instantiated or passed as props.
-
-### Manual Injection
-
-**_Note:_** Manual injection also means manually coordinating state changes between components. Please read the section on [state and lifecycle](#state-and-lifecycle) for more information or consider using [Palau](#palau) instead
-
-Components can be manually injected by calling the MicroState constructor as follows:
-
-```javascript
-new MicroState({
-  rootComponent: Foo
-  mountPoint: document.querySelector("#root")
-});
-```
-
-This will use the mountPoint provided and render the `Foo` callback from earlier. By default, it receives an empty state object. To instantiate the state as `{ready: false}` instead run
-
-```javascript
-const microState = new MicroState({
-  rootComponent: Foo,
-  state: { ready: false },
-  mountPoint: document.querySelector("#root"),
-});
-```
-
-saving the resulting object to the variable is important if you later need to invoke the `getState()`, `setState()` or `putState()` methods. Updating an object passed to the constructor (even by reference), will not trigger a rerender
-
-## State and Lifecycle
-
-This section may be skipped if using [Palau](#palau) and [Nauru](#event-listeners) as they handle state and lifecycle automatically
-
-_A distinction will be made in this section between the MicroState object instantiated and returned by `new MicroState()` and the components it injects/rerenders to the DOM. Though the terms are largely interchangeable, it's important to understand the difference here._
-
-When working with state it's important to understand state belongs to the instantiated object, not its components, therefore every state change will rerender the root and all of its children, causing focus and event listeners to be lost.
-
-Losing focus is overcome by separating components listening to state from those that update it (further details in [Injecting Components](#injecting-components)). Details on adding event listeners properly found [here](#event-listeners)
-
-For this reason, it's not recommended to build SPAs with a single object as an entrypoint as one would with tools like React but rather inject multiple objects as needed in areas that share the smallest amount of state possible (hence the name "MicroState").
-
-Coordinating state between components can be handled automatically by [Palau](#palau).
-
-**_Note:_** MicroState objects created manually without state or via Palau with empty/no `listens` array will never rerender
-
-## Event Listeners
+## Nauru
 
 If you would like to add an event listener directly inside a component, use the static method `Nauru.useListener()` as follows to prevent them from being removed by state updates:
 
@@ -303,7 +249,121 @@ The method will return a "tag" that must be added to the HTML attributes of the 
 
 **_Note:_** The tag is an HTML attribute, not a prop and therefore cannot be passed to a nested component except as the value of a prop
 
-`setOnAfterRender()` and `setOnBeforeRender()` will be converted to private methods in a future version
-~~It's also possible to use `setOnAfterRender()` to manually attach listeners to elements once rendered but `Nauru.useListener()` frees developers to be less concerned with the MicroState lifecycle~~
+## Reference
 
-~~`setOnBeforeRender()` is also provided for convenience but would not be useful for adding event listeners~~
+### API
+
+To prevent state fragmentation, all public methods are static and should be called directly on the class
+
+**Palau API**
+
+- [init](#palauinit)
+- [getPageState](#getpagestate)
+- [putPageState](#putpagestate)
+
+**Nauru API**
+
+- [useListener](#nauruuselistener)
+
+##### Palau.init
+
+Initializes Palau. Only call once per page
+
+```
+Palau.init({
+  pageState?: object,
+  components: {
+    rootComponent: ({ state, prevState }) => string,
+    mountPoint: HTMLElement,
+    listens?: string[]
+    }[]
+  })
+```
+
+##### Palau.getPageState
+
+Returns the current pageState object. An optional key can be provided to return only the value of that key
+
+```
+getPageState(key?: string): object
+```
+
+##### Palau.putPageState
+
+Updates the pageState object with the key-value pairs provided. Unspecified keys will not be updated
+
+```
+putPageState(newState: object)
+```
+
+##### Nauru.useListener
+
+generates a unique tag to be added to the HTML attributes of an element to receive the event listener(s) provided
+
+```
+Nauru.useListener({ name: string, callback: event => void }[]): string
+```
+
+**_Note:_** Tuvalu contains no public methods as it is meant to be managed by Palau
+
+### Rules for Creating Components
+
+- Component should be pure functions returning JSX-like strings saved to a variable in PascalCase
+- HTML elements in the returned string are lowercase
+- All nested components are wrapped in **self-closing** tags and share the name of the variable they're saved to (i.e. `<Foo />` for a component saved to `Foo`).
+- All HTML tags opened in a string are closed
+
+### Rules for Passing Props
+
+- must be handled by the receiving component, even if they share a name with an HTML attribute
+- should be passed similar to how they are in React functional components (`<Component propName={value} />`)
+- have a structure of `propName={<value>}`
+- cannot be named `state` or `prevState`
+- component will receive the key-value pair of `propName: <value>` added to the object of its first parameter
+- numeric values will be stringified
+- values will have HTML special characters escaped to prevent XSS attacks
+
+## Advanced Usage
+
+Topics past this point are provided for further reference but not considered necessary for basic usage
+
+### State and Lifecycle
+
+_A distinction will be made in this section between the Tuvalu object instantiated and returned by `new Tuvalu()` and the components it injects/rerenders to the DOM. Though the terms are largely interchangeable, it's important to understand the difference here._
+
+When working with state it's important to understand state belongs to the instantiated object, not its components, therefore every state change will rerender the root and all of its children, causing focus and event listeners to be lost.
+
+Losing focus is overcome by separating components listening to state from those that update it (further details in [Injecting Components](#injecting-components)). Details on adding event listeners properly found [here](#event-listeners)
+
+For this reason, it's not recommended to build SPAs with a single object as an entrypoint as one would with tools like React but rather inject multiple objects as needed in areas that share the smallest amount of state possible (hence the name "MicroState").
+
+Coordinating state between components can be handled automatically by [Palau](#palau).
+
+**_Note:_** Tuvalu objects created manually without state or via Palau with empty/no `listens` array will never rerender
+
+### Manual Injection
+
+**_Note:_** Manual injection also means manually coordinating state changes between components. Please read the section on [state and lifecycle](#state-and-lifecycle) for more information
+
+Components can be manually injected by calling the Tuvalu constructor as follows:
+
+```javascript
+new Tuvalu({
+  rootComponent: Foo
+  mountPoint: document.querySelector("#root")
+});
+```
+
+This will use the mountPoint provided and render the `Foo` callback from earlier. By default, it receives an empty state object. To instantiate the state as `{ready: false}` instead run
+
+```javascript
+const tuvaluObject = new Tuvalu({
+  rootComponent: Foo,
+  state: { ready: false },
+  mountPoint: document.querySelector("#root"),
+});
+```
+
+saving the resulting object to the variable is important if you later need to invoke the `_getState()`, `_setState()` or `putState()` methods. Updating an object passed to the constructor (even by reference), will not trigger a rerender.
+
+For legacy reasons, you may also construct an object with `new MicroState()` which extends `Tuvalu()` and exposes `getState()` and `setState()` aliases for `_getState()` and `_setState()` respectively. It also will default mountPoint to `document.querySelector("#root")`.

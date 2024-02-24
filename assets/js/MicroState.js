@@ -26,7 +26,7 @@ class Palau {
    * }[]
    * }} pageState
    */
-  constructor({ pageState = {}, components = [] }) {
+  static init({ pageState = {}, components = [] }) {
     if (this.instantiated) {
       throw new Error(
         "Palau has already been instantiated. Use Palau.putPageState() to manage state"
