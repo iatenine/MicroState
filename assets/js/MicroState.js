@@ -1,10 +1,10 @@
 /**
  * Palau
- * Singleton class to manage page state and Microstate component injection
+ * Singleton class to manage page state and Tuvalu component injection
  * Components passed in Constructor will be rendered automatically
  * and only updated when pageState keys found in their listen array
  * are updated
- * @dependency MicroState
+ * @dependency Tuvalu
  */
 
 class Palau {
@@ -20,7 +20,7 @@ class Palau {
    * @param {{
    * pageState: object,
    * components: {
-   * rootComponent: MicroStateComponent,
+   * rootComponent: TuvaluComponent,
    * mountPoint: HTMLElement,
    * listens?: string[],
    * }[]
@@ -58,7 +58,7 @@ class Palau {
         ...newState,
       };
       Palau.components.push({
-        component: new MicroState(component),
+        component: new Tuvalu(component),
         listens: component.listens,
       });
     });
@@ -114,7 +114,7 @@ class Palau {
         const newState = Palau.__listenerStringsToObject(
           Palau.components[index].listens
         );
-        Palau.components[index].component.setState(newState);
+        Palau.components[index].component._setState(newState);
       });
     } catch (error) {
       const errorObject = {
@@ -206,7 +206,7 @@ class Palau {
 
 /**
  * Nauru
- * Helper class for MicroState to manage event listeners between renders
+ * Helper class to manage event listeners between renders
  */
 class Nauru {
   static count = 0;
@@ -227,40 +227,46 @@ class Nauru {
     Nauru.events.push(newEvents);
     return `data-nauru=${Nauru.count++}`;
   }
+
+  static _attachListeners() {
+    const elements = document.querySelectorAll(`[data-nauru]`);
+    elements.forEach((element) => {
+      const id = element.dataset.nauru;
+      const events = Nauru.events[id];
+      events.forEach((event) => {
+        element.addEventListener(event.name, event.callback);
+      });
+    });
+  }
 }
 
 /**
- * MicroState
+ * Tuvalu
  * A state container to render HTML strings returned by components,
- * injected into a DOM element provided upon instantiation.
+ * injected into a DOM element provided upon instantiation. Manual instantiation
+ * is not required, consider using Palau instead
  */
 
-class MicroState {
+class Tuvalu {
   /**
-   * inject mountpoint with result of root function
-   * root function, and its children, should follow
-   * the structure of (state: object, prevState: object) => string.
-   * Expects mountPointID to be "root" if not specified
    * @param {{
    * rootComponent: (contextObject: {
    *  state: object,
-   *  prevState: object,
+   *  prevState: object | null,
+   *  useListener: (event: Event) => any,
    *  props: object,
    * }) => string,
    * state?: object,
    * mountPoint?: HTMLElement}} Config
    */
   constructor({ rootComponent, state = {}, mountPoint = null }) {
-    if (!mountPoint && !document.querySelector("#root"))
-      throw new Error(
-        "DOM must contain element with id of root or mountPoint must be provided"
-      );
+    if (!mountPoint) throw new Error("mountPoint must be provided");
     if (!rootComponent) throw new Error("rootComponent is required");
-    this.setState(state);
+    this._setState(state);
     this.root = rootComponent;
     this.onAfterRender = () => {};
     this.onBeforeRender = () => {};
-    this.mountPoint = mountPoint || document.querySelector("#root");
+    this.mountPoint = mountPoint;
     this._render();
   }
   /**
@@ -269,7 +275,7 @@ class MicroState {
    * @param {string} key
    * @returns {object}
    */
-  getState(key = null) {
+  _getState(key = null) {
     return key !== null ? this.state[key] : this.state;
   }
   /**
@@ -277,9 +283,9 @@ class MicroState {
    * If only looking to update one key, consider putState()
    * @param {object} state
    */
-  setState(state) {
+  _setState(state) {
     const prevState = { ...this.state };
-    this.state = MicroState.escapeHTML(state);
+    this.state = Tuvalu.escapeHTML(state);
     this._render(prevState);
   }
   /**
@@ -288,7 +294,7 @@ class MicroState {
    */
   putState(newState = {}) {
     try {
-      this.setState({
+      this._setState({
         ...this.state,
         ...newState,
       });
@@ -303,18 +309,20 @@ class MicroState {
     }
   }
   /**
+   * private function, do not invoke directly
    * Set callback to occur before updating mount point's innerHTML
    * @param {Function} callback
    */
-  setOnBeforeRender(callback) {
+  _setOnBeforeRender(callback) {
     this.onBeforeRender = callback;
     this._render(this.state);
   }
   /**
+   * private function, do not invoke directly
    * Set callback to occur after updating mount point's innerHTML
    * @param {Function} callback
    */
-  setOnAfterRender(callback) {
+  _setOnAfterRender(callback) {
     this.onAfterRender = callback;
     this._render(this.state);
   }
@@ -343,7 +351,7 @@ class MicroState {
     const str = this._evaluateString(rootString, this.state, prevState);
     this.mountPoint.innerHTML = str;
     // use Nauru to add listeners
-    MicroState._attachListeners();
+    Nauru._attachListeners();
     this.onAfterRender(this.state, prevState);
   }
 
@@ -410,10 +418,10 @@ class MicroState {
     for (const key of keys) {
       const value = state[key];
       if (typeof value === "object" || typeof value === "array") {
-        state[key] = MicroState.escapeHTML(value);
+        state[key] = Tuvalu.escapeHTML(value);
       }
       if (typeof value === "string") {
-        state[key] = MicroState.sanitizeHTML(value);
+        state[key] = Tuvalu.sanitizeHTML(value);
       }
     }
     return state;
@@ -432,31 +440,25 @@ class MicroState {
       .replace(/'/g, "&#39;")
       .replace(/"/g, "&quot;");
   }
+}
 
-  /**
-   * @param {{name: string, callback: () => any}[]} newEvents
-   * @returns {string} tag
-   * @deprecated
-   * Kept for reverse-compatibility.
-   * Use Nauru.useListener instead
-   */
-  static useListener(newEvents) {
-    Nauru.events.push(newEvents);
-    return `data-nauru=${Nauru.count++}`;
+/**
+ * MicroState
+ * A subclass of Tuvalu created to ensure backwards compatibility
+ * Not recommended to use in new projects. Refer to documentation for
+ * current best practices
+ */
+class MicroState extends Tuvalu {
+  constructor({ rootComponent, state = {}, mountPoint = null }) {
+    if (!mountPoint) mountPoint = document.querySelector("#root");
+    super({ rootComponent, state, mountPoint });
   }
 
-  /**
-   * private function, do not invoke directly
-   * @returns {void}
-   */
-  static _attachListeners() {
-    const elements = document.querySelectorAll(`[data-nauru]`);
-    elements.forEach((element) => {
-      const id = element.dataset.nauru;
-      const events = Nauru.events[id];
-      events.forEach((event) => {
-        element.addEventListener(event.name, event.callback);
-      });
-    });
+  getState(key = null) {
+    return this._getState(key);
+  }
+
+  setState(state) {
+    this._setState(state);
   }
 }

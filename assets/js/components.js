@@ -7,7 +7,7 @@ const Button = ({ el, index }) => {
       name: "click",
       callback: (event) => {
         const id = parseInt(event.target.dataset.listId);
-        const list = stateHandler.getState("list");
+        const list = stateHandler._getState("list");
         const filteredList = list.filter((_, index) => index !== id);
         stateHandler.putState({ list: filteredList });
       },

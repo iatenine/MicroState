@@ -4,7 +4,7 @@ testContainer.id = "test-container";
 // testContainer.style.display = "none";
 document.body.appendChild(testContainer);
 
-const listContainer = new MicroState({
+const listContainer = new Tuvalu({
   rootComponent: ListContainer,
   mountPoint: testContainer,
   state: {
@@ -12,7 +12,7 @@ const listContainer = new MicroState({
   },
 });
 
-// allow for testing of MicroState without Palau implementation
+// allow for testing of Tuvalu without Palau implementation
 const stateHandler = listContainer;
 
 try {
@@ -26,7 +26,7 @@ try {
   messages.push("Passed: initial state renders by default <div>");
 
   // add item to list
-  listContainer.setState({
+  listContainer._setState({
     list: [
       { id: 1, name: "<strong>one</strong>" },
       { id: 2, name: "<strong>two</strong>" },
@@ -38,9 +38,9 @@ try {
   messages.push("Passed: items rerender when setState() is called");
 
   // should be able to fetch state by key name
-  const firstListName = listContainer.getState("list")[0].name;
+  const firstListName = listContainer._getState("list")[0].name;
   expect(firstListName).to.be.a("string");
-  expect(listContainer.getState().list[0].name === firstListName).to.be.true;
+  expect(listContainer._getState().list[0].name === firstListName).to.be.true;
   messages.push("Passed: getState() works with and without key name");
 
   // HTML should be escaped when passed in state
@@ -52,30 +52,30 @@ try {
 
   // put state should not interfere with other state
   listContainer.putState({ newList: "test" });
-  expect(listContainer.getState("newList")).to.equal("test");
-  expect(listContainer.getState("list").length).to.equal(2);
+  expect(listContainer._getState("newList")).to.equal("test");
+  expect(listContainer._getState("list").length).to.equal(2);
   messages.push("Passed: putState() does not interfere with other state");
 
   // clicking X button updates state properly
   testContainer.querySelector("button").click();
-  expect(listContainer.getState("list").length).to.equal(
+  expect(listContainer._getState("list").length).to.equal(
     1,
     "clicking X button does not update state properly"
   );
 
   // setState should completely overwrite state
-  listContainer.setState({ list: [] });
-  expect(listContainer.getState("list").length).to.equal(0);
-  expect(listContainer.getState("newList")).to.be.undefined;
+  listContainer._setState({ list: [] });
+  expect(listContainer._getState("list").length).to.equal(0);
+  expect(listContainer._getState("newList")).to.be.undefined;
   messages.push("Passed: setState() completely overwrites state");
 
   messages.push(
-    "<strong style='color:green;'>MicroState Test Suite Passed!</strong>"
+    "<strong style='color:green;'>Tuvalu Test Suite Passed!</strong>"
   );
 } catch (e) {
   messages.push(e.message);
   messages.push(
-    "<strong style='color:red;'>Exiting Microstate Test Suite with error</strong>"
+    "<strong style='color:red;'>Exiting Tuvalu Test Suite with error</strong>"
   );
 } finally {
   resultContainer.innerHTML = messages
