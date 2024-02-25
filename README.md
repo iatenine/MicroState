@@ -36,7 +36,13 @@ MicroState is built on 3 primary tools:
 
 General usage of MicroState is as follows:
 
-1.  Enable MicroState in your project by adding a copy of [MicroState.js](https://github.com/iatenine/MicroState/blob/main/assets/js/MicroState.js) (no CDN available at this time)
+1. Copy either [MicroState.js](https://github.com/iatenine/MicroState/blob/main/assets/js/MicroState.js) or the following line into your project to enable MicroState:
+```
+<script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.0.0/assets/js/MicroState.js" 
+integrity="sha512-jk699QmHv/3f1859ckLQmVcuHvKIy4Ny221JdMJM0xxAg8gLE+NtE+34k70yWjL/TxYHMbuDAzGFPfzfYc2G0g==" 
+crossorigin="anonymous"></script>
+```
+
 2.  Create Tuvalu components
 3.  Initialize Palau to inject components to their mount points and set an initial page state
 4.  Use Palau.putState() anytime page state needs to be updated
