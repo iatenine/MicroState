@@ -4,23 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <script src="chai.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        const expect = chai.expect;
+        const messages = [];
+    </script>
     <script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.0.0/assets/js/MicroState.js"
         integrity="sha512-jk699QmHv/3f1859ckLQmVcuHvKIy4Ny221JdMJM0xxAg8gLE+NtE+34k70yWjL/TxYHMbuDAzGFPfzfYc2G0g=="
         crossorigin="anonymous"></script>
-    <script type="text/javascript" src="assets/js/components.js" defer></script>
-    <script type="text/javascript" src="assets/js/script.js" defer></script>
+    <script src="assets/js/components.js" type="text/javascript"></script>
+    <script src="assets/js/palauComponents.js" type="text/javascript"></script>
+    <script src="tests/tuvalu.test.js" type="text/javascript" defer></script>
+    <script src="tests/nauru.test.js" type="text/javascript" defer></script>
+    <script src="tests/palau.test.js" type="text/javascript" defer></script>
+    <title>MicroState Demo</title>
 </head>
 
 <body>
     <h1>MicroState Demonstration</h1>
-    <p>This grocery list style app exists to demonstrate MicroState, an injectable state manager that can target any DOM
-        element. To see the code in full, please visit the <a href="https://github.com/iatenine/MicroState">full
-            repo</a></p>
-    <div id="input-root">
-    </div>
-    <div id="root">
-    </div>
+    <p>This grocery list style app exists to demonstrate MicroState, a suite of tools designed to enable JSX-like
+        components in an incremental way, agnostic of underlying tech stack. To see the code in full, please visit the
+        <a href="https://github.com/iatenine/MicroState">full
+            repo</a>
+    </p>
+    <div id="test-container"></div>
+    <div id="input-root"></div>
+    <h1>Test Suites</h1>
+    <div id="test-results"></div>
 </body>
+<script>
+    const resultContainer = document.querySelector("#test-results")
+    resultContainer.textContent = "Tests running";
+</script>
 
 </html>

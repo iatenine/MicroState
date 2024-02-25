@@ -1,8 +1,4 @@
-// create hidden test div in document.body
-const testContainer = document.createElement("div");
-testContainer.id = "test-container";
-// testContainer.style.display = "none";
-document.body.appendChild(testContainer);
+const testContainer = document.querySelector("#test-container");
 
 const listContainer = new Tuvalu({
   rootComponent: ListContainer,

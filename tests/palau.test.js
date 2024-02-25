@@ -1,9 +1,6 @@
 // arrange
 testContainer.innerHTML = "<div></div>";
-const inputContainer = document.createElement("div");
-inputContainer.id = "input-root";
-// inputContainer.style.display = "none";
-document.body.appendChild(inputContainer);
+const inputContainer = document.querySelector("#input-root");
 const initialPageState = {
   title: "Palau Test",
   nestedList: [
