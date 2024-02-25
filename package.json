@@ -1,0 +1,35 @@
+{
+  "name": "microstate",
+  "version": "2.1.0",
+  "description": "enable JSX-like components directly in the browser agnostic of tech stack",
+  "main": "build/microstate.js",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "babel assets/js/MicroState.js --out-dir build && mv build/MicroState.js build/MicroState.min.js && minify build/MicroState.min.js --comments true --out-file build/MicroState.min.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iatenine/MicroState.git"
+  },
+  "keywords": [
+    "JSX",
+    "components",
+    "UI",
+    "incremental"
+  ],
+  "author": "Jack Linhart",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iatenine/MicroState/issues"
+  },
+  "homepage": "https://github.com/iatenine/MicroState#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.23.9",
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9",
+    "babel-minify": "^0.5.2"
+  }
+}
