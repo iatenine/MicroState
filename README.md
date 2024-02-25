@@ -36,10 +36,10 @@ MicroState is built on 3 primary tools:
 
 General usage of MicroState is as follows:
 
-1. Copy either [MicroState.js](https://github.com/iatenine/MicroState/blob/main/assets/js/MicroState.js) or the following line into your project to enable MicroState:
+1. Copy either [MicroState.min.js](https://github.com/iatenine/MicroState/blob/main/assets/build/MicroState.min.js) or the following line into your project to enable MicroState:
 ```
-<script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.0.0/assets/js/MicroState.js" 
-integrity="sha512-jk699QmHv/3f1859ckLQmVcuHvKIy4Ny221JdMJM0xxAg8gLE+NtE+34k70yWjL/TxYHMbuDAzGFPfzfYc2G0g==" 
+<script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.1.0/build/MicroState.min.js"
+integrity="sha512-k8kL/OFG/6Fkfid564mvvpixKcM6yL+pmQy2uvDAyuXioAspKrbc1NBt1T5uKNFXVbPO6iMFh7h1rHhY+t6HeA=="
 crossorigin="anonymous"></script>
 ```
 
