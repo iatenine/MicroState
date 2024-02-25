@@ -53,7 +53,9 @@ try {
   messages.push("Passed: putState() does not interfere with other state");
 
   // clicking X button updates state properly
+  console.log(testContainer.querySelector("button"));
   testContainer.querySelector("button").click();
+  console.log(testContainer.querySelector("button"));
   expect(listContainer._getState("list").length).to.equal(
     1,
     "clicking X button does not update state properly"
