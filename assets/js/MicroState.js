@@ -121,12 +121,12 @@ class Tuvalu {
    * @returns {string} HTML string
    */
   _evaluateString(string, state, prevState) {
-    const regex = /<[A-Z]\w*.*?\/>/;
+    const regex = /<[A-Z]\w*[\s\S]*?\/>/;
     // base case, return string if regex doesn't match anything
     if (!string.match(regex)) return string;
     // otherwise, get the first match and evaluate it
     const match = string.match(regex)[0];
-    const componentName = match.match(/\w+/g)[0];
+    const componentName = match.match(/\w+/gm)[0];
     const props = match.match(/\w+={[^}]*}+/)
       ? this._buildObjectFromAttributes(match)
       : {};

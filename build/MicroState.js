@@ -169,12 +169,12 @@ var Tuvalu = /*#__PURE__*/function () {
   }, {
     key: "_evaluateString",
     value: function _evaluateString(string, state, prevState) {
-      var regex = /<[A-Z]\w*.*?\/>/;
+      var regex = /<[A-Z]\w*[\s\S]*?\/>/;
       // base case, return string if regex doesn't match anything
       if (!string.match(regex)) return string;
       // otherwise, get the first match and evaluate it
       var match = string.match(regex)[0];
-      var componentName = match.match(/\w+/g)[0];
+      var componentName = match.match(/\w+/gm)[0];
       var props = match.match(/\w+={[^}]*}+/) ? this._buildObjectFromAttributes(match) : {};
       var executionString = "".concat(componentName, "({\n      state: ").concat(JSON.stringify(state), ", \n      prevState: ").concat(JSON.stringify(prevState), ",\n      ...").concat(JSON.stringify(props), ",\n      })");
       var replacementString = eval(executionString);

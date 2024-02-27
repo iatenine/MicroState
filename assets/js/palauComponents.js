@@ -15,7 +15,10 @@ const PalauInput = () => {
       },
     },
   ]);
-  return `<input ${tag} id="palau-input" style="width:18rem" placeholder='Enter a new value and press enter' />`;
+  return `<input ${tag} 
+  id="palau-input" 
+  style="width:18rem" 
+  placeholder='Enter a new value and press enter' />`;
 };
 
 const PalauButton = ({ el, index, palau }) => {
@@ -48,7 +51,9 @@ const PalauListItem = ({ state }) => {
     state.list.length === 0
       ? `No items`
       : state.list.map((el, index) => {
-          return `<PalauButton el={${el}} index={${index}} />`;
+          return `<PalauButton 
+          el={${el}} 
+          index={${index}} />`;
         })
   }`;
 };
