@@ -38,7 +38,9 @@ General usage of MicroState is as follows:
 
 1. Copy either [MicroState.min.js](https://github.com/iatenine/MicroState/blob/main/assets/build/MicroState.min.js) or the following line into your project to enable MicroState:
 ```
-<script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.1.0/assets/js/MicroState.js" integrity="sha512-jk699QmHv/3f1859ckLQmVcuHvKIy4Ny221JdMJM0xxAg8gLE+NtE+34k70yWjL/TxYHMbuDAzGFPfzfYc2G0g==" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.1.1/build/MicroState.min.js"
+integrity="sha512-hXgJhi6j14wMJBw4S3Ex0soaROqvyPpIuY/nfahbV0mkkp08HFdRDalyRNj5gN3siOXjOlfiQHoMcq/cHuehsg=="
+crossorigin="anonymous"></script>
 ```
 
 2.  Create Tuvalu components
