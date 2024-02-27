@@ -1,246 +1,4 @@
 /**
- * Palau
- * Singleton class to manage page state and Tuvalu component injection
- * Components passed in Constructor will be rendered automatically
- * and only updated when pageState keys found in their listen array
- * are updated
- * @dependency Tuvalu
- */
-
-class Palau {
-  static pageState = {};
-  static components = [];
-  static subcribedEvents = {};
-  static instantiated = false;
-
-  /**
-   * initialize page state and mount/subscribe components.
-   * Component states will be derived from the pageState object
-   * and only include keys found in their listen array
-   * @param {{
-   * pageState: object,
-   * components: {
-   * rootComponent: TuvaluComponent,
-   * mountPoint: HTMLElement,
-   * listens?: string[],
-   * }[]
-   * }} pageState
-   */
-  static init({ pageState = {}, components = [] }) {
-    if (this.instantiated) {
-      throw new Error(
-        "Palau has already been instantiated. Use Palau.putPageState() to manage state"
-      );
-    }
-    if (pageState !== Object(pageState)) {
-      throw new Error("pageState must be an object if specified");
-    }
-    if (!Array.isArray(components)) {
-      throw new Error("components must be an array");
-    }
-    components.forEach((component) => {
-      if (!component.rootComponent || !component.mountPoint) {
-        throw new Error(
-          "Invalid component configuration: mountPoint and root are required in each component"
-        );
-      }
-    });
-
-    Palau.pageState = pageState;
-    components.forEach((component, index) => {
-      if (!component.listens) component.listens = [];
-      if (!Palau.subcribedEvents[component.listens]) {
-        Palau.subcribedEvents[component.listens] = [];
-      }
-      Palau.subcribedEvents[component.listens].push(index);
-      const newState = Palau.__listenerStringsToObject(component.listens);
-      component.state = {
-        ...newState,
-      };
-      Palau.components.push({
-        component: new Tuvalu(component),
-        listens: component.listens,
-      });
-    });
-    this.instantiated = true;
-  }
-
-  /**
-   * Return pageState object, or specific key if provided
-   * keys can specify nested values such as "list[0].name"
-   * @param {string} key?
-   * @returns
-   */
-  static getPageState(key = null) {
-    if (key === null || typeof key !== "string") return Palau.pageState;
-    const executionString = Palau.__convertKeyToExecutionString(key);
-    return eval(executionString);
-  }
-
-  /**
-   * update state of keys present in newState object
-   * and re-render subscribed components. Unlisted keys
-   * will not be updated
-   * @param {object} newState
-   * @returns
-   */
-  static putPageState(newState = null) {
-    if (newState === null) {
-      console.warn("putPageState called with null value. Ignoring.");
-      return;
-    }
-    const impactedKeys = Object.keys(newState);
-    // Prevent unnecessary re-renders
-    impactedKeys.forEach((key) => {
-      if (Palau.pageState[key] === newState[key]) {
-        impactedKeys.splice(impactedKeys.indexOf(key), 1);
-        delete newState[key];
-      }
-    });
-    try {
-      Palau.__setPageState({
-        ...Palau.pageState,
-        ...newState,
-      });
-      const subscribedIndices = [];
-      impactedKeys.forEach((key) => {
-        const indices = Palau.subcribedEvents[key] || [];
-        indices.forEach((index) => {
-          if (subscribedIndices.includes(index)) return;
-          subscribedIndices.push(index);
-        });
-      });
-      subscribedIndices.forEach((index) => {
-        const newState = Palau.__listenerStringsToObject(
-          Palau.components[index].listens
-        );
-        Palau.components[index].component._setState(newState);
-      });
-    } catch (error) {
-      const errorObject = {
-        message: error.message,
-        stack: error.stack,
-        pageState: Palau.pageState,
-        newState,
-      };
-      console.error(errorObject);
-      throw new Error("Failed to update pageState: " + errorObject.message);
-    }
-  }
-
-  /**
-   * private function, do not invoke directly
-   * update pageState with new state object. This is a destructive operation
-   * that will not trigger a re-render of the component. Use putPageState()
-   * instead when possible.
-   * @param {object} state
-   * @returns
-   */
-  static __setPageState(state = null) {
-    if (state === null) {
-      console.warn("setPageState called with null value. Ignoring.");
-      return;
-    }
-    if (typeof state !== "object") {
-      throw new Error("setPageState requires an object");
-    }
-    dispatchEvent(
-      new Event("updatePalauState:", { prevState: Palau.pageState, state })
-    );
-    Palau.pageState = state;
-  }
-
-  /**
-   * private function, do not invoke directly
-   * Provided a string, returns a string that can be evaluated to access the
-   * value of the key in the pageState object. If excludePageState is true,
-   * the string will be returned without the pageState prefix. Example:
-   * "list[0].name" => "Palau.pageState['list'][0]['name']"
-   * @param {string} key
-   * @param {boolean} excludePageState
-   * @returns {string}
-   */
-  static __convertKeyToExecutionString(key, excludePageState = false) {
-    const indices = key.match(/[\d+]/g);
-    const keys = key
-      .split(".")
-      .map((item) => {
-        return item.split(/[\d+]/);
-      })
-      .flat();
-    const combine = keys.map((item) => {
-      if (item === "]") return parseInt(indices.pop());
-      if (item.endsWith("[")) return item.slice(0, -1);
-      return item;
-    });
-    const joined = combine
-      .map((item) => {
-        return typeof item === "string" ? '["' + item + '"]' : "[" + item + "]";
-      })
-      .join("");
-    return excludePageState ? `${joined}` : `Palau.pageState${joined}`;
-  }
-
-  /**
-   * private function, do not invoke directly
-   * Provided an array of strings, returns an object with matching keys,
-   * populating the values with the current state of the page. Until nested
-   * listeners are supported, only Object.keys() is needed for the inverse
-   * @param {string[]} strings
-   * @returns {object}
-   */
-  static __listenerStringsToObject(strings) {
-    const result = {};
-    const uniqueStrings = [...new Set(strings)];
-    uniqueStrings.forEach((string) => {
-      const executionString = Palau.__convertKeyToExecutionString(string, true);
-      const key = executionString
-        .replace("]", "")
-        .replace("[", "")
-        .replace(/"/g, "");
-      result[key] = eval(`this.pageState${executionString}`);
-    });
-    return result;
-  }
-}
-
-/**
- * Nauru
- * Helper class to manage event listeners between renders
- */
-class Nauru {
-  static count = 0;
-  static events = [];
-
-  /**
-   * Accepts an array of objects with the following structure:
-   * {
-   *  callback: (e) => any,
-   * name: string,
-   * }
-   * and returns a string to be used as a tag in the component's HTML
-   * example: <button ${tag}>Click Me!</button>
-   * @param {{name: string, callback: () => any}[]} newEvents
-   * @returns {string} tag
-   */
-  static useListener(newEvents) {
-    Nauru.events.push(newEvents);
-    return `data-nauru=${Nauru.count++}`;
-  }
-
-  static _attachListeners() {
-    const elements = document.querySelectorAll(`[data-nauru]`);
-    elements.forEach((element) => {
-      const id = element.dataset.nauru;
-      const events = Nauru.events[id];
-      events.forEach((event) => {
-        element.addEventListener(event.name, event.callback);
-      });
-    });
-  }
-}
-
-/**
  * Tuvalu
  * A state container to render HTML strings returned by components,
  * injected into a DOM element provided upon instantiation. Manual instantiation
@@ -442,6 +200,247 @@ class Tuvalu {
   }
 }
 
+/**
+ * Palau
+ * Singleton class to manage page state and Tuvalu component injection
+ * Components passed in Constructor will be rendered automatically
+ * and only updated when pageState keys found in their listen array
+ * are updated
+ * @dependency Tuvalu
+ */
+
+class Palau {
+  static pageState = {};
+  static components = [];
+  static subcribedEvents = {};
+  static instantiated = false;
+
+  /**
+   * initialize page state and mount/subscribe components.
+   * Component states will be derived from the pageState object
+   * and only include keys found in their listen array
+   * @param {{
+   * pageState: object,
+   * components: {
+   * rootComponent: TuvaluComponent,
+   * mountPoint: HTMLElement,
+   * listens?: string[],
+   * }[]
+   * }} pageState
+   */
+  static init({ pageState = {}, components = [] }) {
+    if (Palau.instantiated) {
+      throw new Error(
+        "Palau has already been instantiated. Use Palau.putPageState() to manage state"
+      );
+    }
+    if (pageState !== Object(pageState)) {
+      throw new Error("pageState must be an object if specified");
+    }
+    if (!Array.isArray(components)) {
+      throw new Error("components must be an array");
+    }
+    components.forEach((component) => {
+      if (!component.rootComponent || !component.mountPoint) {
+        throw new Error(
+          "Invalid component configuration: mountPoint and root are required in each component"
+        );
+      }
+    });
+
+    Palau.pageState = pageState;
+    components.forEach((component, index) => {
+      if (!component.listens) component.listens = [];
+      if (!Palau.subcribedEvents[component.listens]) {
+        Palau.subcribedEvents[component.listens] = [];
+      }
+      Palau.subcribedEvents[component.listens].push(index);
+      const newState = Palau.__listenerStringsToObject(component.listens);
+      component.state = {
+        ...newState,
+      };
+      Palau.components.push({
+        component: new Tuvalu(component),
+        listens: component.listens,
+      });
+    });
+    Palau.instantiated = true;
+  }
+
+  /**
+   * Return pageState object, or specific key if provided
+   * keys can specify nested values such as "list[0].name"
+   * @param {string} key?
+   * @returns
+   */
+  static getPageState(key = null) {
+    if (key === null || typeof key !== "string") return Palau.pageState;
+    const executionString = Palau.__convertKeyToExecutionString(key);
+    return eval(executionString);
+  }
+
+  /**
+   * update state of keys present in newState object
+   * and re-render subscribed components. Unlisted keys
+   * will not be updated
+   * @param {object} newState
+   * @returns
+   */
+  static putPageState(newState = null) {
+    if (newState === null) {
+      console.warn("putPageState called with null value. Ignoring.");
+      return;
+    }
+    const impactedKeys = Object.keys(newState);
+    // Prevent unnecessary re-renders
+    impactedKeys.forEach((key) => {
+      if (Palau.pageState[key] === newState[key]) {
+        impactedKeys.splice(impactedKeys.indexOf(key), 1);
+        delete newState[key];
+      }
+    });
+    try {
+      Palau.__setPageState({
+        ...Palau.pageState,
+        ...newState,
+      });
+      const subscribedIndices = [];
+      impactedKeys.forEach((key) => {
+        const indices = Palau.subcribedEvents[key] || [];
+        indices.forEach((index) => {
+          if (subscribedIndices.includes(index)) return;
+          subscribedIndices.push(index);
+        });
+      });
+      subscribedIndices.forEach((index) => {
+        const newState = Palau.__listenerStringsToObject(
+          Palau.components[index].listens
+        );
+        Palau.components[index].component._setState(newState);
+      });
+    } catch (error) {
+      const errorObject = {
+        message: error.message,
+        stack: error.stack,
+        pageState: Palau.pageState,
+        newState,
+      };
+      console.error(errorObject);
+      throw new Error("Failed to update pageState: " + errorObject.message);
+    }
+  }
+
+  /**
+   * private function, do not invoke directly
+   * update pageState with new state object. This is a destructive operation
+   * that will not trigger a re-render of the component. Use putPageState()
+   * instead when possible.
+   * @param {object} state
+   * @returns
+   */
+  static __setPageState(state = null) {
+    if (state === null) {
+      console.warn("setPageState called with null value. Ignoring.");
+      return;
+    }
+    if (typeof state !== "object") {
+      throw new Error("setPageState requires an object");
+    }
+    dispatchEvent(
+      new Event("updatePalauState:", { prevState: Palau.pageState, state })
+    );
+    Palau.pageState = state;
+  }
+
+  /**
+   * private function, do not invoke directly
+   * Provided a string, returns a string that can be evaluated to access the
+   * value of the key in the pageState object. If excludePageState is true,
+   * the string will be returned without the pageState prefix. Example:
+   * "list[0].name" => "Palau.pageState['list'][0]['name']"
+   * @param {string} key
+   * @param {boolean} excludePageState
+   * @returns {string}
+   */
+  static __convertKeyToExecutionString(key, excludePageState = false) {
+    const indices = key.match(/[\d+]/g);
+    const keys = key
+      .split(".")
+      .map((item) => {
+        return item.split(/[\d+]/);
+      })
+      .flat();
+    const combine = keys.map((item) => {
+      if (item === "]") return parseInt(indices.pop());
+      if (item.endsWith("[")) return item.slice(0, -1);
+      return item;
+    });
+    const joined = combine
+      .map((item) => {
+        return typeof item === "string" ? '["' + item + '"]' : "[" + item + "]";
+      })
+      .join("");
+    return excludePageState ? `${joined}` : `Palau.pageState${joined}`;
+  }
+
+  /**
+   * private function, do not invoke directly
+   * Provided an array of strings, returns an object with matching keys,
+   * populating the values with the current state of the page. Until nested
+   * listeners are supported, only Object.keys() is needed for the inverse
+   * @param {string[]} strings
+   * @returns {object}
+   */
+  static __listenerStringsToObject(strings) {
+    const result = {};
+    const uniqueStrings = [...new Set(strings)];
+    uniqueStrings.forEach((string) => {
+      const executionString = Palau.__convertKeyToExecutionString(string, true);
+      const key = executionString
+        .replace("]", "")
+        .replace("[", "")
+        .replace(/"/g, "");
+      result[key] = eval(`Palau.pageState${executionString}`);
+    });
+    return result;
+  }
+}
+
+/**
+ * Nauru
+ * Helper class to manage event listeners between renders
+ */
+class Nauru {
+  static count = 0;
+  static events = [];
+
+  /**
+   * Accepts an array of objects with the following structure:
+   * {
+   *  callback: (e) => any,
+   * name: string,
+   * }
+   * and returns a string to be used as a tag in the component's HTML
+   * example: <button ${tag}>Click Me!</button>
+   * @param {{name: string, callback: () => any}[]} newEvents
+   * @returns {string} tag
+   */
+  static useListener(newEvents) {
+    Nauru.events.push(newEvents);
+    return `data-nauru=${Nauru.count++}`;
+  }
+
+  static _attachListeners() {
+    const elements = document.querySelectorAll(`[data-nauru]`);
+    elements.forEach((element) => {
+      const id = element.dataset.nauru;
+      const events = Nauru.events[id];
+      events.forEach((event) => {
+        element.addEventListener(event.name, event.callback);
+      });
+    });
+  }
+}
 /**
  * MicroState
  * A subclass of Tuvalu created to ensure backwards compatibility
