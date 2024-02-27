@@ -251,10 +251,12 @@ class Palau {
     Palau.pageState = pageState;
     components.forEach((component, index) => {
       if (!component.listens) component.listens = [];
-      if (!Palau.subcribedEvents[component.listens]) {
-        Palau.subcribedEvents[component.listens] = [];
-      }
-      Palau.subcribedEvents[component.listens].push(index);
+      component.listens.forEach((listen) => {
+        if (!Palau.subcribedEvents[listen]) {
+          Palau.subcribedEvents[listen] = [];
+        }
+        Palau.subcribedEvents[listen].push(index);
+      });
       const newState = Palau.__listenerStringsToObject(component.listens);
       component.state = {
         ...newState,
