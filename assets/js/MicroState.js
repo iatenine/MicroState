@@ -130,11 +130,9 @@ class Tuvalu {
     const props = match.match(/\w+={[^}]*}+/)
       ? this._buildObjectFromAttributes(match)
       : {};
-    const executionString = `${componentName}({
-      state: ${JSON.stringify(state)}, 
-      prevState: ${JSON.stringify(prevState)},
-      ...${JSON.stringify(props)},
-      })`;
+    const executionString = `${componentName}({state: ${JSON.stringify(
+      state
+    )}, prevState: ${JSON.stringify(prevState)}, ...${JSON.stringify(props)}})`;
     const replacementString = eval(executionString);
     const trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
     return this._evaluateString(

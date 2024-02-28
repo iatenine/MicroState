@@ -176,7 +176,7 @@ var Tuvalu = /*#__PURE__*/function () {
       var match = string.match(regex)[0];
       var componentName = match.match(/\w+/gm)[0];
       var props = match.match(/\w+={[^}]*}+/) ? this._buildObjectFromAttributes(match) : {};
-      var executionString = "".concat(componentName, "({\n      state: ").concat(JSON.stringify(state), ", \n      prevState: ").concat(JSON.stringify(prevState), ",\n      ...").concat(JSON.stringify(props), ",\n      })");
+      var executionString = "".concat(componentName, "({state: ").concat(JSON.stringify(state), ", prevState: ").concat(JSON.stringify(prevState), ", ...").concat(JSON.stringify(props), "})");
       var replacementString = eval(executionString);
       var trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
       return this._evaluateString(string.replace(regex, replacementString), state, prevState).match(trimOuter).join("");
@@ -292,10 +292,12 @@ var Palau = /*#__PURE__*/function () {
       Palau.pageState = pageState;
       components.forEach(function (component, index) {
         if (!component.listens) component.listens = [];
-        if (!Palau.subcribedEvents[component.listens]) {
-          Palau.subcribedEvents[component.listens] = [];
-        }
-        Palau.subcribedEvents[component.listens].push(index);
+        component.listens.forEach(function (listen) {
+          if (!Palau.subcribedEvents[listen]) {
+            Palau.subcribedEvents[listen] = [];
+          }
+          Palau.subcribedEvents[listen].push(index);
+        });
         var newState = Palau.__listenerStringsToObject(component.listens);
         component.state = _objectSpread({}, newState);
         Palau.components.push({

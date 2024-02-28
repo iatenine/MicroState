@@ -48,7 +48,7 @@ try {
       {
         rootComponent: PalauListContainer,
         mountPoint: testContainer,
-        listens: ["list"],
+        listens: ["list", "nestedList"], // ensure multiple listeners work
       },
       {
         rootComponent: PalauInput,
