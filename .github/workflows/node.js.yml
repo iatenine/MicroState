@@ -28,3 +28,7 @@ jobs:
       - run: npm ci
       - run: npm run build --if-present
       - run: npm test --if-present
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: CI build output
+
