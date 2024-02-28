@@ -331,6 +331,15 @@ class Palau {
   }
 
   /**
+   * alias of putPageState
+   * @param {object} newState
+   * @returns
+   */
+  static update(newState = null) {
+    return Palau.putPageState(newState);
+  }
+
+  /**
    * private function, do not invoke directly
    * update pageState with new state object. This is a destructive operation
    * that will not trigger a re-render of the component. Use putPageState()
