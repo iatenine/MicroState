@@ -173,6 +173,7 @@ class Tuvalu {
     const keys = Object.keys(state);
     for (const key of keys) {
       const value = state[key];
+      if (!value) continue;
       if (typeof value === "object" || typeof value === "array") {
         state[key] = Tuvalu.escapeHTML(value);
       }
