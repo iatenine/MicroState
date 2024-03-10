@@ -46,9 +46,14 @@ try {
     pageState: initialPageState,
     components: [
       {
-        rootComponent: PalauListContainer,
+        rootComponent: 'PalauListContainer',
         mountPoint: testContainer,
         listens: ["list", "nestedList"], // ensure multiple listeners work
+        definitions: {
+          PalauListContainer: () => `<div id="definition-list-container">
+            <PalauListItem />  
+          </div>`
+        }
       },
       {
         rootComponent: PalauInput,
@@ -70,9 +75,10 @@ try {
   messages.push("Passed: Palau prevents reinitialization");
 
   // check components mounted
-  expect(testContainer.querySelector("#palau-list-container")).to.not.be.null;
+  expect(testContainer.querySelector("#definition-list-container")).to.not.be.null;
   expect(inputContainer.querySelector("#palau-input")).to.not.be.null;
   messages.push("Passed: Palau components mount to specified mount points");
+  messages.push("Passed: Definition objects are passed to root components");
 
   // method tests
   const listenerStrings = ["title", "list", "nestedList"];

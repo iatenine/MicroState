@@ -80,7 +80,7 @@ const Button = ({ el, index }) => {
         const id = parseInt(event.target.dataset.listId);
         const list = stateHandler._getState("list");
         const filteredList = list.filter((_, index) => index !== id);
-        stateHandler.putState({ list: filteredList });
+        stateHandler.putState({ list: filteredList, definitionTest: false});
       },
     },
     {

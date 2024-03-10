@@ -22,10 +22,10 @@ MicroState is built on 3 primary tools:
 - [Nauru](#nauru)
 - [Reference](#reference)
   - [API](#api)
-    - [Palau.init](#palauinit)
-    - [Palau.getPageState](#palaugetpagestate)
-    - [Palau.putPageState](#palauputpagestate)
-    - [Nauru.useListener](#nauruuselistener)
+      - [Palau.init](#palauinit)
+      - [Palau.getPageState](#palaugetpagestate)
+      - [Palau.putPageState](#palauputpagestate)
+      - [Nauru.useListener](#nauruuselistener)
   - [Rules for Creating Components](#rules-for-creating-components)
   - [Rules for Passing Props](#rules-for-passing-props)
 - [Advanced Usage](#advanced-usage)
@@ -115,6 +115,8 @@ const Button = ({ el }) => {
 };
 ```
 
+To prevent cluttering your global scope, an optional `definitions` object may be passed to `Palau.init()` as specified in the [Injecting Components](#injecting-components) section.
+
 It's also possible to read `prevState` on each render:
 
 ```javascript
@@ -146,9 +148,10 @@ Palau.init({
   pageState?: object,
   components: [
     {
-      rootComponent: ({ state, prevState }) => string,
+      rootComponent: ({ state, prevState }) => string || string,
       mountPoint: HTMLElement,
-      listens?: string[]
+      listens?: string[],
+      definitions?: object  // if provided, components found in the definitions object will be called over those in global scope. Only define rootComponent as a string if its key exists here
     }
   ]
 });

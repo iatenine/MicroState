@@ -15,13 +15,21 @@ class Tuvalu {
    *  props: object,
    * }) => string,
    * state?: object,
-   * mountPoint?: HTMLElement}} Config
+   * mountPoint?: HTMLElement
+   * definitions?: object
+   * }} Config
    */
-  constructor({ rootComponent, state = {}, mountPoint = null }) {
+  constructor({ rootComponent, state = {}, mountPoint = null, definitions = {} }) {
     if (!mountPoint) throw new Error("mountPoint must be provided");
     if (!rootComponent) throw new Error("rootComponent is required");
+    if (typeof rootComponent !== "string" && 
+        typeof rootComponent !== "function" && 
+        !definitions[rootComponent]) {
+      throw new Error("rootComponent must be a function or name of a component in definitions");
+    }
+    this.definitions = definitions;
     this._setState(state);
-    this.root = rootComponent;
+    this.root = typeof rootComponent === "string" ? definitions[rootComponent] : rootComponent;
     this.onAfterRender = () => {};
     this.onBeforeRender = () => {};
     this.mountPoint = mountPoint;
@@ -130,7 +138,7 @@ class Tuvalu {
     const props = match.match(/\w+={[^}]*}+/)
       ? this._buildObjectFromAttributes(match)
       : {};
-    const executionString = `${componentName}({state: ${JSON.stringify(
+    const executionString = `${this?.definitions[componentName] ? 'this.definitions.' : ''}${componentName}({state: ${JSON.stringify(
       state
     )}, prevState: ${JSON.stringify(prevState)}, ...${JSON.stringify(props)}})`;
     const replacementString = eval(executionString);
@@ -224,6 +232,7 @@ class Palau {
    * rootComponent: TuvaluComponent,
    * mountPoint: HTMLElement,
    * listens?: string[],
+   * definitions?: object
    * }[]
    * }} pageState
    */

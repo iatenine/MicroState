@@ -6,6 +6,28 @@ const listContainer = new Tuvalu({
   state: {
     list: [],
   },
+  definitions: {
+    Button: ({ el, index }) => {
+      const tag = Nauru.useListener([
+        {
+          name: "click",
+          callback: (event) => {
+            const id = parseInt(event.target.dataset.listId);
+            const list = stateHandler._getState("list");
+            const filteredList = list.filter((_, index) => index !== id);
+            stateHandler.putState({ list: filteredList, definitionTest: true });
+          },
+        },
+        {
+          name: "mouseover",
+          callback: (event) => {
+            event.target.style.cursor = "crosshair"; // multiple events can be attached to the same element
+          },
+        },
+      ]);
+  return `<div>${el}<button data-list-id=${index} ${tag}>X</button></div> `;
+    }
+  }
 });
 
 // allow for testing of Tuvalu without Palau implementation
@@ -53,13 +75,13 @@ try {
   messages.push("Passed: putState() does not interfere with other state");
 
   // clicking X button updates state properly
-  console.log(testContainer.querySelector("button"));
   testContainer.querySelector("button").click();
-  console.log(testContainer.querySelector("button"));
   expect(listContainer._getState("list").length).to.equal(
     1,
     "clicking X button does not update state properly"
   );
+  expect(listContainer._getState("definitionTest")).to.be.true;
+  messages.push("Passed: Prefers definition components over global components");
 
   // setState should completely overwrite state
   listContainer._setState({ list: [] });
