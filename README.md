@@ -38,8 +38,8 @@ General usage of MicroState is as follows:
 
 1. Copy either [MicroState.min.js](https://github.com/iatenine/MicroState/blob/main/assets/build/MicroState.min.js) or the following line into your project to enable MicroState:
 ```
-<script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.1.1/build/MicroState.min.js"
-integrity="sha512-hXgJhi6j14wMJBw4S3Ex0soaROqvyPpIuY/nfahbV0mkkp08HFdRDalyRNj5gN3siOXjOlfiQHoMcq/cHuehsg=="
+<script src="https://cdn.jsdelivr.net/gh/iatenine/MicroState@v2.1.3/build/MicroState.min.js"
+integrity="sha512-X8jhYQQ0Hr8wYq08ezbCPAXbbu+0KsLP+xG+xob0A2rjYlS2WURBoCrU7QiOZsuWPH1A5foG3a2J3OPtz2DI9w=="
 crossorigin="anonymous"></script>
 ```
 
