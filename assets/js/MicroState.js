@@ -138,10 +138,9 @@ class Tuvalu {
     const props = match.match(/\w+={[^}]*}+/)
       ? this._buildObjectFromAttributes(match)
       : {};
-    const executionString = `${this?.definitions[componentName] ? 'this.definitions.' : ''}${componentName}({state: ${JSON.stringify(
-      state
-    )}, prevState: ${JSON.stringify(prevState)}, ...${JSON.stringify(props)}})`;
-    const replacementString = eval(executionString);
+    const replacementString = this?.definitions[componentName] ? 
+      this.definitions[componentName](props) : 
+      eval(componentName)({state, prevState, ...props});
     const trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
     return this._evaluateString(
       string.replace(regex, replacementString),
@@ -159,13 +158,19 @@ class Tuvalu {
    */
   _buildObjectFromAttributes(string) {
     // expect component to have the following form <ComponentName key1={value1} key2={value2} />
-    const regex = /\w+={[^}]*}/g;
+    const regex = /\w+={.*?}(?=[^}])/g;
     const attributes = string.match(regex);
     const result = {};
     if (!attributes) return result;
     attributes.forEach((attr) => {
       const [key, value] = attr.split(/\s*=\s*/);
-      result[key] = value.slice(1, -1); // remove curly braces
+      const v = value.slice(1, -1);
+      try {
+        const nonString = JSON.parse(v);
+        result[key] = nonString;
+      } catch (error) {
+        result[key] = v;
+      }
     });
     return result;
   }
@@ -259,6 +264,8 @@ class Palau {
     Palau.pageState = pageState;
     components.forEach((component, index) => {
       if (!component.listens) component.listens = [];
+      if(component.listens.includes('*')) 
+        component.listens = Object.keys(pageState);
       component.listens.forEach((listen) => {
         if (!Palau.subcribedEvents[listen]) {
           Palau.subcribedEvents[listen] = [];

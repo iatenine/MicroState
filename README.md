@@ -179,7 +179,7 @@ Palau.init({
 })
 ```
 
-The `listens` array on `<ListContainer />` tells Palau to rerender that component only when values in the specified keys are updated by `Palau.putState()`. Conversely, `<Input />` will never rerender, which would otherwise result in losing focus.
+The `listens` array on `<ListContainer />` tells Palau to rerender that component only when values in the specified keys are updated by `Palau.putState()`. Conversely, `<Input />` will never rerender, which would otherwise result in losing focus. You may also add `'*'` to subscribe to all state changes.
 
 Since nothing listens to `title`, it can be updated without triggering a rerender of any component.
 

@@ -7,7 +7,14 @@ const listContainer = new Tuvalu({
     list: [],
   },
   definitions: {
-    Button: ({ el, index }) => {
+    Button: ({ el, index, boolTest, arrayTest, objectTest }) => {
+      expect(typeof index === "number").to.be.true;
+      expect(typeof boolTest === "boolean").to.be.true;
+      expect(Array.isArray(arrayTest)).to.be.true;
+      expect(arrayTest.length).to.equal(3);
+      expect(arrayTest[1]).to.equal(2);
+      expect(objectTest).to.be.an("object");
+      expect(objectTest.key).to.equal("value");
       const tag = Nauru.useListener([
         {
           name: "click",
@@ -34,6 +41,8 @@ const listContainer = new Tuvalu({
 const stateHandler = listContainer;
 
 try {
+  // prop type test occurred in Button component during initialization
+  messages.push("Passed: props retain their type");
   // empty state tests
   // should mount to testContainer
   expect(listContainer.mountPoint).to.equal(testContainer);

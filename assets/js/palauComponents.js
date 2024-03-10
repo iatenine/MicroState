@@ -102,7 +102,13 @@ const ListItem = ({ state }) => {
     state.list.length === 0
       ? `No items`
       : state.list.map((el, index) => {
-          return `<Button el={${el}} index={${index}} />`;
+          return `<Button 
+            el={${el}} 
+            index={${index}} 
+            boolTest={true} 
+            arrayTest={[1, 2, 3]}
+            objectTest={${JSON.stringify({ key: "value" })}}
+          />`;
         })
   }`;
 };

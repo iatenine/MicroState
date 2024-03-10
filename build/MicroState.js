@@ -42,19 +42,27 @@ var Tuvalu = /*#__PURE__*/function () {
    *  props: object,
    * }) => string,
    * state?: object,
-   * mountPoint?: HTMLElement}} Config
+   * mountPoint?: HTMLElement
+   * definitions?: object
+   * }} Config
    */
   function Tuvalu(_ref) {
     var rootComponent = _ref.rootComponent,
       _ref$state = _ref.state,
       state = _ref$state === void 0 ? {} : _ref$state,
       _ref$mountPoint = _ref.mountPoint,
-      mountPoint = _ref$mountPoint === void 0 ? null : _ref$mountPoint;
+      mountPoint = _ref$mountPoint === void 0 ? null : _ref$mountPoint,
+      _ref$definitions = _ref.definitions,
+      definitions = _ref$definitions === void 0 ? {} : _ref$definitions;
     _classCallCheck(this, Tuvalu);
     if (!mountPoint) throw new Error("mountPoint must be provided");
     if (!rootComponent) throw new Error("rootComponent is required");
+    if (typeof rootComponent !== "string" && typeof rootComponent !== "function" && !definitions[rootComponent]) {
+      throw new Error("rootComponent must be a function or name of a component in definitions");
+    }
+    this.definitions = definitions;
     this._setState(state);
-    this.root = rootComponent;
+    this.root = typeof rootComponent === "string" ? definitions[rootComponent] : rootComponent;
     this.onAfterRender = function () {};
     this.onBeforeRender = function () {};
     this.mountPoint = mountPoint;
@@ -176,8 +184,10 @@ var Tuvalu = /*#__PURE__*/function () {
       var match = string.match(regex)[0];
       var componentName = match.match(/\w+/gm)[0];
       var props = match.match(/\w+={[^}]*}+/) ? this._buildObjectFromAttributes(match) : {};
-      var executionString = "".concat(componentName, "({state: ").concat(JSON.stringify(state), ", prevState: ").concat(JSON.stringify(prevState), ", ...").concat(JSON.stringify(props), "})");
-      var replacementString = eval(executionString);
+      var replacementString = this !== null && this !== void 0 && this.definitions[componentName] ? this.definitions[componentName](props) : eval(componentName)(_objectSpread({
+        state: state,
+        prevState: prevState
+      }, props));
       var trimOuter = /<([A-z]*)[^>]*>(\s|.)*?<\/(\1)>/g;
       return this._evaluateString(string.replace(regex, replacementString), state, prevState).match(trimOuter).join("");
     }
@@ -191,7 +201,7 @@ var Tuvalu = /*#__PURE__*/function () {
     key: "_buildObjectFromAttributes",
     value: function _buildObjectFromAttributes(string) {
       // expect component to have the following form <ComponentName key1={value1} key2={value2} />
-      var regex = /\w+={[^}]*}/g;
+      var regex = /\w+={.*?}(?=[^}])/g;
       var attributes = string.match(regex);
       var result = {};
       if (!attributes) return result;
@@ -200,7 +210,13 @@ var Tuvalu = /*#__PURE__*/function () {
           _attr$split2 = _slicedToArray(_attr$split, 2),
           key = _attr$split2[0],
           value = _attr$split2[1];
-        result[key] = value.slice(1, -1); // remove curly braces
+        var v = value.slice(1, -1);
+        try {
+          var nonString = JSON.parse(v);
+          result[key] = nonString;
+        } catch (error) {
+          result[key] = v;
+        }
       });
       return result;
     }
@@ -219,6 +235,7 @@ var Tuvalu = /*#__PURE__*/function () {
       for (var _i = 0, _keys = keys; _i < _keys.length; _i++) {
         var key = _keys[_i];
         var value = state[key];
+        if (!value) continue;
         if (_typeof(value) === "object" || typeof value === "array") {
           state[key] = Tuvalu.escapeHTML(value);
         }
@@ -267,6 +284,7 @@ var Palau = /*#__PURE__*/function () {
      * rootComponent: TuvaluComponent,
      * mountPoint: HTMLElement,
      * listens?: string[],
+     * definitions?: object
      * }[]
      * }} pageState
      */
@@ -292,6 +310,7 @@ var Palau = /*#__PURE__*/function () {
       Palau.pageState = pageState;
       components.forEach(function (component, index) {
         if (!component.listens) component.listens = [];
+        if (component.listens.includes('*')) component.listens = Object.keys(pageState);
         component.listens.forEach(function (listen) {
           if (!Palau.subcribedEvents[listen]) {
             Palau.subcribedEvents[listen] = [];
@@ -370,6 +389,18 @@ var Palau = /*#__PURE__*/function () {
         console.error(errorObject);
         throw new Error("Failed to update pageState: " + errorObject.message);
       }
+    }
+
+    /**
+     * alias of putPageState
+     * @param {object} newState
+     * @returns
+     */
+  }, {
+    key: "update",
+    value: function update() {
+      var newState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      return Palau.putPageState(newState);
     }
 
     /**

@@ -58,6 +58,7 @@ try {
       {
         rootComponent: PalauInput,
         mountPoint: inputContainer,
+        listens: ['fakeKey', "*"],
       },
     ],
   });
@@ -80,6 +81,9 @@ try {
   messages.push("Passed: Palau components mount to specified mount points");
   messages.push("Passed: Definition objects are passed to root components");
 
+  // wildcard listener test
+  expect(Palau.getPageState("fakeKey")).to.be.undefined;
+  expect(Palau.components[1].listens).to.deep.equal(Object.keys(Palau.getPageState()));
   // method tests
   const listenerStrings = ["title", "list", "nestedList"];
   expect(Palau.__listenerStringsToObject(listenerStrings)).to.deep.equal(
